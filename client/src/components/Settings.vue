@@ -8,6 +8,7 @@
             <q-tabs v-model='tab'>
                 <q-tab label='Quick Tag' class='q-pa-lg' name='quicktag'></q-tab>
                 <q-tab label='Quick Tag Custom' name='quicktag-custom'></q-tab>
+                <q-tab label='AI Settings' name='ai'></q-tab>
                 <q-tab label='Preferences' name='advanced'></q-tab>
             </q-tabs>
         </q-card-section>
@@ -331,6 +332,135 @@
                 </div>
             </div>
 
+            <!-- AI Settings -->
+            <div v-if='tab == "ai"'>
+                <!-- API Provider -->
+                <div class='text-uppercase text-primary text-subtitle2 text-bold q-mt-sm q-mb-md text-center'>AI Provider</div>
+                <q-select
+                    v-model='aiProvider'
+                    dense
+                    filled
+                    label='API Provider'
+                    :options='apiProviders'
+                    class='input q-mb-md'
+                    popup-content-class='no-shadow'
+                >
+                    <template v-slot:prepend>
+                        <q-icon name='mdi-cloud' />
+                    </template>
+                </q-select>
+
+                <div class='text-caption text-grey-6 q-mb-md text-center'>
+                    Using {{ aiProvider }} - FREE tier available
+                </div>
+
+                <!-- API Key -->
+                <div class='text-uppercase text-primary text-subtitle2 text-bold q-mt-lg q-mb-md text-center'>API Key</div>
+                <q-input
+                    v-model='aiApiKey'
+                    dense
+                    filled
+                    :type="showApiKey ? 'text' : 'password'"
+                    label='Gemini API Key'
+                    class='input q-mb-sm'
+                >
+                    <template v-slot:prepend>
+                        <q-icon name='mdi-key' />
+                    </template>
+                    <template v-slot:append>
+                        <q-icon
+                            :name="showApiKey ? 'mdi-eye-off' : 'mdi-eye'"
+                            class='cursor-pointer'
+                            @click='showApiKey = !showApiKey'
+                        />
+                    </template>
+                </q-input>
+
+                <div class='text-center q-mb-md'>
+                    <q-btn
+                        flat
+                        dense
+                        color='primary'
+                        icon='mdi-open-in-new'
+                        label='Get FREE API Key'
+                        @click='openApiKeyUrl'
+                    />
+                </div>
+
+                <q-separator class='q-mx-auto' :style='"max-width: 513px; margin-top: 24px; margin-bottom: 35px"' inset color="darker"/>
+
+                <!-- Feature Toggles -->
+                <div class='text-uppercase text-primary text-subtitle2 text-bold q-mt-lg q-mb-md text-center'>AI Features</div>
+
+                <q-checkbox
+                    v-model='aiEnableGenre'
+                    label='Genre Classification'
+                    class='checkbox'
+                ></q-checkbox>
+                <div class='text-caption text-grey-6 q-ml-lg q-mb-sm'>
+                    Automatically detect and classify genres using AI
+                </div>
+
+                <q-checkbox
+                    v-model='aiEnableMood'
+                    label='Mood Detection'
+                    class='checkbox'
+                ></q-checkbox>
+                <div class='text-caption text-grey-6 q-ml-lg q-mb-sm'>
+                    Detect moods like dark, uplifting, hypnotic, etc.
+                </div>
+
+                <q-checkbox
+                    v-model='aiEnableEnergy'
+                    label='Energy Analysis'
+                    class='checkbox'
+                ></q-checkbox>
+                <div class='text-caption text-grey-6 q-ml-lg q-mb-md'>
+                    Analyze energy level and danceability (0-100)
+                </div>
+
+                <q-separator class='q-mx-auto' :style='"max-width: 513px; margin-top: 24px; margin-bottom: 35px"' inset color="darker"/>
+
+                <!-- Confidence Threshold -->
+                <div class='text-uppercase text-primary text-subtitle2 text-bold q-mt-lg q-mb-md text-center'>Confidence Threshold</div>
+                <div class='text-caption text-grey-6 q-mb-sm text-center'>
+                    Minimum confidence to accept AI suggestions: {{ aiConfidence }}%
+                </div>
+                <q-slider
+                    v-model='aiConfidence'
+                    :min='50'
+                    :max='100'
+                    :step='5'
+                    label
+                    label-always
+                    color='primary'
+                    class='q-mb-md'
+                />
+
+                <q-separator class='q-mx-auto' :style='"max-width: 513px; margin-top: 24px; margin-bottom: 35px"' inset color="darker"/>
+
+                <!-- Info -->
+                <div class='text-center q-mt-md'>
+                    <q-icon name='mdi-information' size='sm' color='primary' />
+                    <div class='text-caption text-grey-6 q-mt-sm'>
+                        AI tagging uses FREE cloud APIs (Gemini recommended).<br/>
+                        No audio files are uploaded - only extracted features (BPM, key, etc.).<br/>
+                        Rate limit: 15 requests/min on free tier.
+                    </div>
+                </div>
+
+                <div class='text-center q-mt-md'>
+                    <q-btn
+                        push
+                        color='primary'
+                        class='text-black'
+                        icon='mdi-cog'
+                        label='Manage Custom Tags'
+                        @click='goToAICustomTags'
+                    />
+                </div>
+            </div>
+
             <!-- Advanced -->
             <div v-if='tab == "advanced"'>
                 
@@ -497,6 +627,16 @@ const customQTEdit = ref<boolean[]>([]);
 const qtPlaylist = ref({});
 const emit = defineEmits(['close']);
 
+// AI Settings
+const aiProvider = ref('Gemini (Google)');
+const apiProviders = ['Gemini (Google)', 'OpenRouter', 'Groq', 'Together AI', 'OpenAI', 'Custom'];
+const aiApiKey = ref('');
+const showApiKey = ref(false);
+const aiEnableGenre = ref(true);
+const aiEnableMood = ref(true);
+const aiEnableEnergy = ref(true);
+const aiConfidence = ref(70);
+
 // Primary color change
 function colorChange() {
     setCssVar('primary', $1t.settings.value.primaryColor);
@@ -625,6 +765,24 @@ function loadQTPlaylist(playlist?: Playlist) {
     $1t.loadQuickTag(playlist!)
 }
 
+
+// AI Settings methods
+function openApiKeyUrl() {
+    const urls: { [key: string]: string } = {
+        'Gemini (Google)': 'https://aistudio.google.com/app/apikey',
+        'OpenRouter': 'https://openrouter.ai/keys',
+        'Groq': 'https://console.groq.com/keys',
+        'Together AI': 'https://api.together.xyz/settings/api-keys',
+        'OpenAI': 'https://platform.openai.com/api-keys'
+    };
+    const url = urls[aiProvider.value] || 'https://aistudio.google.com/app/apikey';
+    $1t.url(url);
+}
+
+function goToAICustomTags() {
+    close();
+    window.location.hash = '#/ai-custom-tags';
+}
 
 // Save on close
 function close() {
