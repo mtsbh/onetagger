@@ -1,55 +1,26 @@
 //! Audio Feature Extraction Module
 //!
-//! Extracts audio features for ML models:
-//! - BPM (tempo)
-//! - Key
-//! - MFCCs (Mel-frequency cepstral coefficients)
-//! - Spectral features (centroid, rolloff, flux)
-//! - Chroma features
-//! - Energy/loudness
+//! Extracts audio features for AI analysis
 
-use anyhow::{Error, Result};
-use std::path::{Path, PathBuf};
+use anyhow::Result;
+use std::path::Path;
 use serde::{Serialize, Deserialize};
 
 /// Complete audio feature set extracted from a track
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AudioFeatures {
-    /// Beats per minute
     pub bpm: Option<f32>,
-
-    /// Musical key (e.g., "Am", "C", "F#m")
     pub key: Option<String>,
-
-    /// Duration in seconds
     pub duration: f32,
-
-    /// Spectral centroid (brightness)
     pub spectral_centroid: f32,
-
-    /// Spectral rolloff
     pub spectral_rolloff: f32,
-
-    /// Spectral flux (measure of change)
     pub spectral_flux: f32,
-
-    /// Zero crossing rate (texture)
     pub zero_crossing_rate: f32,
-
-    /// RMS energy (loudness)
     pub rms_energy: f32,
-
-    /// MFCCs (for ML models)
     pub mfccs: Vec<f32>,
-
-    /// Chroma features (for harmonic analysis)
     pub chroma: Vec<f32>,
-
-    /// Onset strength (percussiveness)
     pub onset_strength: f32,
-
-    /// Tempo stability
     pub tempo_stability: f32,
 }
 
@@ -64,8 +35,8 @@ impl Default for AudioFeatures {
             spectral_flux: 0.0,
             zero_crossing_rate: 0.0,
             rms_energy: 0.0,
-            mfccs: vec![0.0; 13],  // 13 MFCC coefficients
-            chroma: vec![0.0; 12],  // 12 pitch classes
+            mfccs: vec![0.0; 13],
+            chroma: vec![0.0; 12],
             onset_strength: 0.0,
             tempo_stability: 0.0,
         }
@@ -74,14 +45,13 @@ impl Default for AudioFeatures {
 
 /// Feature extractor
 pub struct FeatureExtractor {
-    sample_rate: u32,
+    _sample_rate: u32,
 }
 
 impl FeatureExtractor {
-    /// Create a new feature extractor
     pub fn new() -> Self {
         Self {
-            sample_rate: 44100,  // Standard sample rate
+            _sample_rate: 44100,
         }
     }
 
@@ -89,22 +59,32 @@ impl FeatureExtractor {
     pub fn extract(&self, path: &Path) -> Result<AudioFeatures> {
         info!("Extracting features from: {}", path.display());
 
-        // TODO: Implement actual feature extraction using:
-        // - symphonia for audio decoding
-        // - aubio for pitch/tempo detection
-        // - Custom FFT for spectral features
-
-        // For now, return placeholder with some realistic values
+        // TODO: Implement actual feature extraction using symphonia
+        // For now, return realistic placeholder values
         let mut features = AudioFeatures::default();
 
-        // Try to get duration from file metadata
-        if let Ok(metadata) = self.get_audio_metadata(path) {
-            features.duration = metadata.duration;
-            features.bpm = metadata.bpm;
-            features.key = metadata.key;
+        // Try to read existing tags for BPM/key if available
+        if let Ok(tag) = onetagger_tag::Tag::load_file(path, false) {
+            let tag_impl = tag.tag();
+
+            // Try to get BPM
+            if let Some(bpm_values) = tag_impl.get_field(onetagger_tag::Field::BPM) {
+                if let Some(bpm_str) = bpm_values.first() {
+                    if let Ok(bpm) = bpm_str.parse::<f32>() {
+                        features.bpm = Some(bpm);
+                    }
+                }
+            }
+
+            // Try to get key
+            if let Some(key_values) = tag_impl.get_field(onetagger_tag::Field::Key) {
+                if let Some(key_str) = key_values.first() {
+                    features.key = Some(key_str.clone());
+                }
+            }
         }
 
-        // Placeholder spectral features
+        // Placeholder spectral features (will be replaced with real analysis)
         features.spectral_centroid = 1500.0;
         features.spectral_rolloff = 3000.0;
         features.spectral_flux = 0.5;
@@ -115,62 +95,12 @@ impl FeatureExtractor {
 
         Ok(features)
     }
-
-    /// Get basic audio metadata
-    fn get_audio_metadata(&self, path: &Path) -> Result<AudioMetadata> {
-        // Try to read using onetagger-tag
-        use onetagger_tag::Tag;
-
-        let tag = Tag::load_file(path, false)?;
-
-        Ok(AudioMetadata {
-            duration: tag.duration().as_secs_f32(),
-            bpm: tag.bpm().map(|b| b as f32),
-            key: tag.key().map(|k| k.to_string()),
-        })
-    }
-
-    /// Extract spectral features from audio samples
-    fn extract_spectral_features(&self, samples: &[f32]) -> SpectralFeatures {
-        // TODO: Implement FFT-based spectral analysis
-        SpectralFeatures {
-            centroid: 1500.0,
-            rolloff: 3000.0,
-            flux: 0.5,
-        }
-    }
-
-    /// Extract MFCCs (for ML models)
-    fn extract_mfccs(&self, samples: &[f32]) -> Vec<f32> {
-        // TODO: Implement MFCC extraction
-        vec![0.0; 13]
-    }
-
-    /// Extract chroma features (for harmonic analysis)
-    fn extract_chroma(&self, samples: &[f32]) -> Vec<f32> {
-        // TODO: Implement chroma extraction
-        vec![0.0; 12]
-    }
 }
 
 impl Default for FeatureExtractor {
     fn default() -> Self {
         Self::new()
     }
-}
-
-/// Basic audio metadata
-struct AudioMetadata {
-    duration: f32,
-    bpm: Option<f32>,
-    key: Option<String>,
-}
-
-/// Spectral features
-struct SpectralFeatures {
-    centroid: f32,
-    rolloff: f32,
-    flux: f32,
 }
 
 #[cfg(test)]
@@ -180,7 +110,7 @@ mod tests {
     #[test]
     fn test_feature_extractor_creation() {
         let extractor = FeatureExtractor::new();
-        assert_eq!(extractor.sample_rate, 44100);
+        assert_eq!(extractor._sample_rate, 44100);
     }
 
     #[test]

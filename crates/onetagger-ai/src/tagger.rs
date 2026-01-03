@@ -5,10 +5,9 @@
 use anyhow::{Error, Result};
 use onetagger_tagger::{
     AutotaggerSource, TaggerConfig, Track, TrackMatch, AudioFileInfo,
-    PlatformInfo, SupportedTag, supported_tags, MatchingUtils,
-    PlatformCustomOptions
+    PlatformInfo, SupportedTag, supported_tags,
+    PlatformCustomOptions, PlatformCustomOptionValue
 };
-use std::collections::HashMap;
 use crate::config::AIConfig;
 use crate::analyze_track;
 
@@ -18,97 +17,86 @@ pub struct AITagger {
 }
 
 impl AITagger {
-    pub fn new(ai_config: AIConfig) -> Self {
+    /// Create new AI tagger with config
+    pub fn new_with_config(ai_config: AIConfig) -> Self {
         Self { ai_config }
     }
 
     /// Get platform info for UI display
-    pub fn info() -> PlatformInfo {
+    pub fn get_info() -> PlatformInfo {
         PlatformInfo {
             id: "ai".to_string(),
-            name: "AI Tagger".to_string(),
+            name: "AI Tagger (Gemini)".to_string(),
             description: r#"
-                <b>AI-Powered Tagging</b><br>
-                Uses machine learning to automatically tag your tracks with:
+                <b>AI-Powered Tagging using FREE Gemini API</b><br>
+                Automatically tag your tracks with:
                 <ul>
-                    <li>Custom genres and styles</li>
-                    <li>Mood detection (dark, uplifting, etc.)</li>
-                    <li>Energy level analysis</li>
-                    <li>Smart tag suggestions using Llama 3.2</li>
+                    <li>Custom genres and styles (your own taxonomy!)</li>
+                    <li>Mood detection (dark, uplifting, hypnotic, etc.)</li>
+                    <li>Energy level analysis (0-100)</li>
+                    <li>Smart tag suggestions using Google Gemini</li>
                 </ul>
-                Works completely offline with free, open-source models.
+                <br>
+                <b>Setup:</b> Get your FREE API key at <a href="https://aistudio.google.com/app/apikey">Google AI Studio</a>
             "#.to_string(),
             version: env!("CARGO_PKG_VERSION").to_string(),
-            icon: include_bytes!("../../assets/ai-icon.png"),  // Will add later
-            max_threads: 8,  // AI inference can be parallelized
+            icon: &[],  // TODO: Add icon
+            max_threads: 8,
             custom_options: Self::custom_options(),
             supported_tags: supported_tags!(
                 Genre, Style, Mood, BPM, Key, OtherTags
             ),
-            requires_auth: false,  // No authentication needed!
+            requires_auth: true,  // Requires API key
         }
     }
 
     /// Custom configuration options for UI
     fn custom_options() -> PlatformCustomOptions {
-        let mut options = PlatformCustomOptions::new();
-
-        // Enable/disable features
-        options.push_opt("enableGenreClassification", "Genre Classification",
-            onetagger_tagger::PlatformCustomOptionValue::Boolean { value: true });
-
-        options.push_opt("enableMoodDetection", "Mood Detection",
-            onetagger_tagger::PlatformCustomOptionValue::Boolean { value: true });
-
-        options.push_opt("enableEnergyAnalysis", "Energy Analysis",
-            onetagger_tagger::PlatformCustomOptionValue::Boolean { value: true });
-
-        // LLM model selection
-        options.push_opt("llmModel", "LLM Model",
-            onetagger_tagger::PlatformCustomOptionValue::Option {
-                values: vec![
-                    "Llama 3.2 1B (Fastest)".to_string(),
-                    "Llama 3.2 3B (Balanced)".to_string(),
-                    "Phi-3.5 Mini (Smart)".to_string(),
-                    "Qwen 2.5 1.5B (Multilingual)".to_string(),
-                ],
-                value: "Llama 3.2 1B (Fastest)".to_string(),
-            });
-
-        // Confidence threshold
-        options.push_opt("confidenceThreshold", "Confidence Threshold",
-            onetagger_tagger::PlatformCustomOptionValue::Number {
-                min: 50,
-                max: 100,
-                step: 5,
-                value: 70,
-            });
-
-        options
+        PlatformCustomOptions::new()
+            .add("apiKey", "Gemini API Key",
+                PlatformCustomOptionValue::String {
+                    value: String::new(),
+                    hidden: Some(true)  // Hide API key input
+                })
+            .add_tooltip("apiProvider", "API Provider",
+                "Which AI provider to use (Gemini is recommended)",
+                PlatformCustomOptionValue::Option {
+                    values: vec![
+                        "Gemini (Google)".to_string(),
+                        "OpenRouter".to_string(),
+                        "Groq".to_string(),
+                        "Together AI".to_string(),
+                    ],
+                    value: "Gemini (Google)".to_string(),
+                })
+            .add("enableGenreClassification", "Genre Classification",
+                PlatformCustomOptionValue::Boolean { value: true })
+            .add("enableMoodDetection", "Mood Detection",
+                PlatformCustomOptionValue::Boolean { value: true })
+            .add("enableEnergyAnalysis", "Energy Analysis",
+                PlatformCustomOptionValue::Boolean { value: true })
+            .add_tooltip("confidenceThreshold", "Confidence Threshold (%)",
+                "Minimum confidence to accept AI suggestions",
+                PlatformCustomOptionValue::Number {
+                    min: 50,
+                    max: 100,
+                    step: 5,
+                    value: 70,
+                })
     }
 }
 
 impl AutotaggerSource for AITagger {
-    fn new(_config: &TaggerConfig) -> Result<Self>
-    where
-        Self: Sized
-    {
-        // Load AI config from tagger config custom options
-        let ai_config = AIConfig::default();
-        Ok(Self::new(ai_config))
-    }
-
-    fn info(&mut self) -> PlatformInfo {
-        Self::info()
-    }
-
     fn match_track(
         &mut self,
         info: &AudioFileInfo,
-        config: &TaggerConfig,
+        _config: &TaggerConfig,
     ) -> Result<Vec<TrackMatch>> {
-        info!("AI analyzing: {} - {}", info.artist.as_ref().unwrap_or(&"Unknown".to_string()),
-            info.title.as_ref().unwrap_or(&"Unknown".to_string()));
+        // Get artist and title using methods
+        let artist = info.artist().unwrap_or("Unknown");
+        let title = info.title().unwrap_or("Unknown");
+
+        info!("AI analyzing: {} - {}", artist, title);
 
         // Analyze track using AI
         let analysis = match tokio::runtime::Runtime::new()?.block_on(
@@ -125,12 +113,18 @@ impl AutotaggerSource for AITagger {
         let mut track = Track {
             platform: "ai".to_string(),
             title: info.title.clone().unwrap_or_default(),
-            artists: vec![info.artist.clone().unwrap_or_default()],
+            artists: if !info.artists.is_empty() {
+                info.artists.clone()
+            } else {
+                vec!["Unknown".to_string()]
+            },
             genres: analysis.genres.iter().map(|g| g.tag.clone()).collect(),
             styles: Vec::new(),
             bpm: analysis.audio_features.as_ref().and_then(|f| f.bpm).map(|b| b as i64),
             key: analysis.audio_features.as_ref().and_then(|f| f.key.clone()),
             mood: analysis.moods.first().map(|m| m.tag.clone()),
+            duration: info.duration.unwrap_or_default(),
+            url: String::new(),
             ..Default::default()
         };
 
@@ -142,7 +136,14 @@ impl AutotaggerSource for AITagger {
             ));
         }
 
-        // Add custom tags
+        if let Some(danceability) = analysis.danceability {
+            track.other.push((
+                onetagger_tag::FrameName::same("AI_DANCEABILITY"),
+                vec![format!("{:.0}", danceability)]
+            ));
+        }
+
+        // Add custom tags as styles
         for tag in analysis.custom_tags {
             track.styles.push(tag.tag);
         }
@@ -160,6 +161,12 @@ impl AutotaggerSource for AITagger {
 
         Ok(vec![track_match])
     }
+
+    fn extend_track(&mut self, _track: &mut Track, _config: &TaggerConfig) -> Result<(), Error> {
+        // AI tagger doesn't need extended metadata fetching
+        // All metadata is gathered in match_track
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -168,9 +175,17 @@ mod tests {
 
     #[test]
     fn test_ai_tagger_info() {
-        let info = AITagger::info();
+        let info = AITagger::get_info();
         assert_eq!(info.id, "ai");
-        assert_eq!(info.name, "AI Tagger");
-        assert!(!info.requires_auth);
+        assert!(info.name.contains("AI"));
+        assert!(info.requires_auth);  // Requires API key
+    }
+
+    #[test]
+    fn test_custom_options() {
+        let options = AITagger::custom_options();
+        assert!(!options.options.is_empty());
+        // Should have API key option
+        assert!(options.options.iter().any(|o| o.id == "apiKey"));
     }
 }
