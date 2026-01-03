@@ -6,7 +6,7 @@
 
     <q-banner class="bg-info text-white q-mb-md" rounded>
       <template v-slot:avatar>
-        <q-icon name="info" color="white" />
+        <q-icon name="mdi-information" color="white" />
       </template>
       Define your own genre, mood, and vibe tags for AI-powered tagging.
       These tags will be used by Gemini AI to categorize your tracks.
@@ -29,7 +29,6 @@
           @remove="removeTag('genres', index)"
           color="primary"
           text-color="white"
-          icon="music_note"
         >
           {{ tag }}
         </q-chip>
@@ -45,7 +44,7 @@
             <q-btn
               flat
               dense
-              icon="add"
+              icon="mdi-plus"
               @click="addTag('genres', newGenreTag); newGenreTag = ''"
               :disable="!newGenreTag.trim()"
             />
@@ -71,7 +70,6 @@
           @remove="removeTag('moods', index)"
           color="secondary"
           text-color="white"
-          icon="mood"
         >
           {{ tag }}
         </q-chip>
@@ -87,7 +85,7 @@
             <q-btn
               flat
               dense
-              icon="add"
+              icon="mdi-plus"
               @click="addTag('moods', newMoodTag); newMoodTag = ''"
               :disable="!newMoodTag.trim()"
             />
@@ -113,7 +111,6 @@
           @remove="removeTag('vibes', index)"
           color="accent"
           text-color="white"
-          icon="wb_twilight"
         >
           {{ tag }}
         </q-chip>
@@ -129,7 +126,7 @@
             <q-btn
               flat
               dense
-              icon="add"
+              icon="mdi-plus"
               @click="addTag('vibes', newVibeTag); newVibeTag = ''"
               :disable="!newVibeTag.trim()"
             />
@@ -149,28 +146,28 @@
         <q-btn-group>
           <q-btn
             label="Techno"
-            icon="flash_on"
+            icon="mdi-lightning-bolt"
             @click="loadPreset('techno')"
             outline
             color="primary"
           />
           <q-btn
             label="House"
-            icon="home"
+            icon="mdi-home"
             @click="loadPreset('house')"
             outline
             color="primary"
           />
           <q-btn
             label="Trance"
-            icon="flight_takeoff"
+            icon="mdi-airplane-takeoff"
             @click="loadPreset('trance')"
             outline
             color="primary"
           />
           <q-btn
             label="Hip-Hop"
-            icon="mic"
+            icon="mdi-microphone"
             @click="loadPreset('hiphop')"
             outline
             color="primary"
@@ -183,28 +180,28 @@
     <div class="row q-gutter-sm">
       <q-btn
         label="Save Tags"
-        icon="save"
+        icon="mdi-content-save"
         color="primary"
         @click="saveTags"
         :loading="saving"
       />
       <q-btn
         label="Reset to Defaults"
-        icon="refresh"
+        icon="mdi-refresh"
         color="negative"
         outline
         @click="confirmReset"
       />
       <q-btn
         label="Export"
-        icon="download"
+        icon="mdi-download"
         color="grey-7"
         outline
         @click="exportTags"
       />
       <q-btn
         label="Import"
-        icon="upload"
+        icon="mdi-upload"
         color="grey-7"
         outline
         @click="importTags"
