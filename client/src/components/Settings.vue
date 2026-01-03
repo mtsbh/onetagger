@@ -439,6 +439,29 @@
 
                 <q-separator class='q-mx-auto' :style='"max-width: 513px; margin-top: 24px; margin-bottom: 35px"' inset color="darker"/>
 
+                <!-- Tag Field Mapping -->
+                <div class='text-uppercase text-primary text-subtitle2 text-bold q-mt-lg q-mb-md text-center'>Tag Field Mapping</div>
+                <div class='text-caption text-grey-6 q-mb-md text-center'>
+                    Choose which tag fields AI tags should be written to
+                </div>
+
+                <div class='q-mb-md'>
+                    <div class='text-subtitle2 q-mb-xs'>Genre Tags → Write to:</div>
+                    <TagFields dense v-model='aiGenreTagField'></TagFields>
+                </div>
+
+                <div class='q-mb-md'>
+                    <div class='text-subtitle2 q-mb-xs'>Mood Tags → Write to:</div>
+                    <TagFields dense v-model='aiMoodTagField'></TagFields>
+                </div>
+
+                <div class='q-mb-md'>
+                    <div class='text-subtitle2 q-mb-xs'>Vibe Tags → Write to:</div>
+                    <TagFields dense v-model='aiVibeTagField'></TagFields>
+                </div>
+
+                <q-separator class='q-mx-auto' :style='"max-width: 513px; margin-top: 24px; margin-bottom: 35px"' inset color="darker"/>
+
                 <!-- Info -->
                 <div class='text-center q-mt-md'>
                     <q-icon name='mdi-information' size='sm' color='primary' />
@@ -636,6 +659,11 @@ const aiEnableGenre = ref(true);
 const aiEnableMood = ref(true);
 const aiEnableEnergy = ref(true);
 const aiConfidence = ref(70);
+
+// AI Tag Field Mappings (where to write AI tags)
+const aiGenreTagField = ref(FrameName.same('GENRE'));
+const aiMoodTagField = ref(FrameName.same('MOOD'));
+const aiVibeTagField = ref(FrameName.same('GROUPING'));
 
 // Primary color change
 function colorChange() {
