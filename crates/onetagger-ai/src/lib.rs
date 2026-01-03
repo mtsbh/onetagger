@@ -31,7 +31,7 @@ pub mod playlist;
 // Re-exports
 pub use config::{AIConfig, CustomTagConfig, APIConfig, APIProvider};
 pub use api::APIClient;
-pub use tagger::AITagger;
+pub use tagger::{AITagger, AIBuilder};
 pub use features::{AudioFeatures, FeatureExtractor};
 pub use classifier::{GenreClassifier, MoodDetector, EnergyAnalyzer};
 pub use embeddings::{EmbeddingGenerator, SemanticMatcher};

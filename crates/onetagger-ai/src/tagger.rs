@@ -4,12 +4,13 @@
 
 use anyhow::{Error, Result};
 use onetagger_tagger::{
-    AutotaggerSource, TaggerConfig, Track, TrackMatch, AudioFileInfo,
+    AutotaggerSource, AutotaggerSourceBuilder, TaggerConfig, Track, TrackMatch, AudioFileInfo,
     PlatformInfo, SupportedTag, supported_tags,
-    PlatformCustomOptions, PlatformCustomOptionValue
+    PlatformCustomOptions, PlatformCustomOptionValue, ConfigCallbackResponse
 };
-use crate::config::AIConfig;
+use crate::config::{AIConfig, APIProvider};
 use crate::analyze_track;
+use serde_json::Value;
 
 /// AI Tagger - implements OneTagger's AutotaggerSource trait
 pub struct AITagger {
@@ -166,6 +167,70 @@ impl AutotaggerSource for AITagger {
         // AI tagger doesn't need extended metadata fetching
         // All metadata is gathered in match_track
         Ok(())
+    }
+}
+
+/// AI Tagger Builder - for platform registration
+pub struct AIBuilder;
+
+impl AutotaggerSourceBuilder for AIBuilder {
+    fn new() -> Self {
+        AIBuilder
+    }
+
+    fn get_source(&mut self, config: &TaggerConfig) -> Result<Box<dyn AutotaggerSource>, Error> {
+        // Get AI config from custom settings
+        let mut ai_config = AIConfig::default();
+
+        // Try to load settings from config
+        if let Some(custom) = config.custom.0.get("ai") {
+            // Extract API key
+            if let Some(Value::String(api_key)) = custom.get("apiKey") {
+                if !api_key.is_empty() {
+                    ai_config.api_config.api_key = Some(api_key.clone());
+                }
+            }
+
+            // Extract API provider
+            if let Some(Value::String(provider)) = custom.get("apiProvider") {
+                ai_config.api_config.provider = match provider.as_str() {
+                    "OpenRouter" => APIProvider::OpenRouter,
+                    "Groq" => APIProvider::Groq,
+                    "Together AI" => APIProvider::TogetherAI,
+                    "OpenAI" => APIProvider::OpenAI,
+                    "Custom" => APIProvider::Custom,
+                    _ => APIProvider::Gemini,
+                };
+            }
+
+            // Extract feature toggles
+            if let Some(Value::Bool(enabled)) = custom.get("enableGenreClassification") {
+                ai_config.enable_genre_classification = *enabled;
+            }
+            if let Some(Value::Bool(enabled)) = custom.get("enableMoodDetection") {
+                ai_config.enable_mood_detection = *enabled;
+            }
+            if let Some(Value::Bool(enabled)) = custom.get("enableEnergyAnalysis") {
+                ai_config.enable_energy_analysis = *enabled;
+            }
+
+            // Extract confidence threshold
+            if let Some(Value::Number(threshold)) = custom.get("confidenceThreshold") {
+                if let Some(t) = threshold.as_f64() {
+                    ai_config.confidence_threshold = (t / 100.0) as f32;
+                }
+            }
+        }
+
+        Ok(Box::new(AITagger::new_with_config(ai_config)))
+    }
+
+    fn info(&self) -> PlatformInfo {
+        AITagger::get_info()
+    }
+
+    fn config_callback(&mut self, _name: &str, _config: Value) -> ConfigCallbackResponse {
+        ConfigCallbackResponse::Empty
     }
 }
 

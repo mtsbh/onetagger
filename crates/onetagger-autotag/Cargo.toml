@@ -36,3 +36,4 @@ onetagger-player = { path = "../onetagger-player" }
 onetagger-shared = { path = "../onetagger-shared" }
 onetagger-renamer = { path = "../onetagger-renamer" }
 onetagger-platforms = { path = "../onetagger-platforms" }
+onetagger-ai = { path = "../onetagger-ai" }

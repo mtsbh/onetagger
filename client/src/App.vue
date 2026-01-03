@@ -19,6 +19,7 @@
                             <q-route-tab :disable="$1t.lock.value.locked" to="/quicktag" class="text-weight-bolder" @click="showSide" >Quick Tag</q-route-tab >
                             <q-route-tab :disable="$1t.lock.value.locked" to="/tageditor" class="text-weight-bolder" @click="hideSide" >Edit Tags</q-route-tab >
                             <q-route-tab :disable="$1t.lock.value.locked" to="/renamer" class="text-weight-bolder" @click="hideSide" >Auto Rename</q-route-tab>
+                            <q-route-tab :disable="$1t.lock.value.locked" to="/ai-custom-tags" class="text-weight-bolder" @click="hideSide" >AI Tags</q-route-tab>
                         </q-tabs>
                     </div>
 
