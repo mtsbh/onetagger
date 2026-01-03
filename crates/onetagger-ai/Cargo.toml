@@ -1,0 +1,64 @@
+[package]
+name = "onetagger-ai"
+version = "0.1.0"
+edition = "2021"
+authors = ["OneTagger Contributors"]
+description = "AI-powered tagging, duplicate detection, and playlist generation for OneTagger"
+
+[dependencies]
+# Core OneTagger dependencies
+onetagger-tagger = { path = "../onetagger-tagger" }
+onetagger-tag = { path = "../onetagger-tag" }
+onetagger-shared = { path = "../onetagger-shared" }
+
+# Error handling & logging
+anyhow = "1.0"
+log = "0.4"
+thiserror = "1.0"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# ML & AI - Using FREE Cloud APIs instead of local models
+# This is simpler, faster, and produces better results!
+
+## HTTP client for API calls
+reqwest = { version = "0.12", features = ["json"] }
+tokio = { version = "1.47", features = ["full"] }
+
+# Audio Processing
+hound = "3.5"  # WAV reading/writing
+symphonia = { version = "0.5", features = ["all"] }  # Multi-format audio decoding
+
+# Embeddings & Similarity
+ndarray = "0.15"
+ndarray-stats = "0.5"
+
+# Utilities
+rayon = "1.10"  # Parallel processing
+crossbeam-channel = "0.5"
+parking_lot = "0.12"
+lazy_static = "1.5"
+regex = "1.10"
+num_cpus = "1.16"  # CPU detection
+
+# Audio fingerprinting (duplicate detection)
+chromaprint = { version = "0.1", optional = true }
+
+# Database (for caching API responses)
+rusqlite = { version = "0.32", features = ["bundled"] }
+
+# Progress tracking
+indicatif = "0.17"
+
+# Environment variables (for API keys)
+dotenvy = "0.15"
+
+[features]
+default = ["fingerprinting"]
+fingerprinting = ["chromaprint"]
+
+[dev-dependencies]
+tempfile = "3.12"
+criterion = "0.5"
