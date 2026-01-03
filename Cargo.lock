@@ -3849,6 +3849,7 @@ dependencies = [
  "lazy_static",
  "libloading",
  "log",
+ "onetagger-ai",
  "onetagger-platforms",
  "onetagger-player",
  "onetagger-renamer",
