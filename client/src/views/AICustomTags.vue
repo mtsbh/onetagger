@@ -94,12 +94,12 @@
       </q-card-section>
     </q-card>
 
-    <!-- Vibe Tags -->
+    <!-- Situation Tags -->
     <q-card class="q-mb-md">
       <q-card-section>
-        <div class="text-h6">✨ Custom Vibes</div>
+        <div class="text-h6">📍 Situation Tags</div>
         <div class="text-caption text-grey-7">
-          Define vibe/context tags (e.g., "warehouse", "beach-sunset", "peak-time")
+          Define situation/time tags (e.g., "Intro", "Peak", "Warmup", "After")
         </div>
       </q-card-section>
 
@@ -223,7 +223,7 @@
           </div>
           <div>
             <div class="text-h6 text-accent">{{ customTags.vibes.length }}</div>
-            <div class="text-caption">Vibes</div>
+            <div class="text-caption">Situations</div>
           </div>
           <div>
             <div class="text-h6 text-positive">{{ totalTags }}</div>
@@ -248,29 +248,40 @@ export default {
     // State
     const customTags = ref({
       genres: [
-        'deep-techno',
-        'melodic-techno',
-        'peak-time-techno',
-        'minimal-techno',
-        'progressive-house',
-        'deep-house',
-        'tech-house',
-        'melodic-house',
+        'Ambient',
+        'Acid',
+        'Breaks',
+        'Deep',
+        'Dub',
+        'Electro',
+        'House',
+        'Minimal',
+        'Techno',
+        'Techouse',
       ],
       moods: [
-        'dark',
-        'uplifting',
-        'melancholic',
-        'euphoric',
-        'hypnotic',
-        'groovy',
+        'Dark',
+        'Cosmic',
+        'Beautiful',
+        'Nasty',
+        'Trippy',
+        'Battle',
+        'Upper',
+        'Proper',
+        'Schizo',
+        'Raw',
+        'Oldek',
       ],
       vibes: [
-        'warehouse',
-        'beach-sunset',
-        'peak-time',
-        'warm-up',
-        'after-hours',
+        'Intro',
+        'Warmup',
+        'Peak',
+        'Filler',
+        'After',
+        'Outro',
+        'Morning',
+        'Daytime',
+        'Tool',
       ],
     });
 
@@ -334,9 +345,9 @@ export default {
 
     const resetToDefaults = () => {
       customTags.value = {
-        genres: ['deep-techno', 'melodic-techno', 'peak-time-techno'],
-        moods: ['dark', 'uplifting', 'hypnotic'],
-        vibes: ['warehouse', 'beach-sunset', 'peak-time'],
+        genres: ['Ambient', 'Techno', 'House', 'Minimal'],
+        moods: ['Dark', 'Cosmic', 'Beautiful', 'Upper'],
+        vibes: ['Intro', 'Warmup', 'Peak', 'After'],
       };
       $q.notify({
         type: 'info',
@@ -348,24 +359,24 @@ export default {
     const loadPreset = (preset) => {
       const presets = {
         techno: {
-          genres: ['deep-techno', 'melodic-techno', 'peak-time-techno', 'minimal-techno', 'industrial-techno'],
-          moods: ['dark', 'hypnotic', 'driving', 'intense'],
-          vibes: ['warehouse', 'underground', 'peak-time', 'after-hours'],
+          genres: ['Techno', 'Minimal', 'Acid', 'Electro'],
+          moods: ['Dark', 'Cosmic', 'Raw', 'Schizo'],
+          vibes: ['Peak', 'After', 'Morning'],
         },
         house: {
-          genres: ['deep-house', 'tech-house', 'progressive-house', 'melodic-house', 'jackin-house'],
-          moods: ['groovy', 'uplifting', 'soulful', 'funky'],
-          vibes: ['beach-club', 'rooftop', 'sunset', 'poolside'],
+          genres: ['House', 'Techouse', 'Deep', 'Funky'],
+          moods: ['Upper', 'Beautiful', 'Proper'],
+          vibes: ['Warmup', 'Peak', 'Daytime'],
         },
         trance: {
-          genres: ['progressive-trance', 'uplifting-trance', 'psy-trance', 'tech-trance'],
-          moods: ['euphoric', 'uplifting', 'emotional', 'energetic'],
-          vibes: ['festival', 'mainstage', 'journey', 'peak-time'],
+          genres: ['Progressive', 'Ambient'],
+          moods: ['Cosmic', 'Trippy', 'Beautiful'],
+          vibes: ['Intro', 'Peak', 'Outro'],
         },
         hiphop: {
-          genres: ['trap', 'boom-bap', 'conscious-rap', 'drill', 'cloud-rap'],
-          moods: ['chill', 'aggressive', 'smooth', 'energetic'],
-          vibes: ['club', 'car-music', 'workout', 'late-night'],
+          genres: ['Breaks', 'Drum & Bass'],
+          moods: ['Battle', 'Nasty', 'Upper'],
+          vibes: ['Peak', 'Filler'],
         },
       };
 

@@ -296,10 +296,10 @@
                         <template #item='{ element, index: j }'>
                             <div class='row'>
                                 <q-btn class='col-1 q-mt-sm' round flat icon='mdi-close' @click='$1t.settings.value.quickTag.custom[i].values.splice(j, 1)'></q-btn>
-                                <q-input 
-                                    class='col-9 q-px-sm q-pt-sm' 
-                                    dense 
-                                    filled 
+                                <q-input
+                                    class='col-9 q-px-sm q-pt-sm'
+                                    dense
+                                    filled
                                     v-model='$1t.settings.value.quickTag.custom[i].values[j].val'
                                 ></q-input>
                                 <KeybindVue
