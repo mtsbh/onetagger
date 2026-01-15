@@ -69,6 +69,7 @@ interface QuickTagCustom {
 interface QuickTagCustomValue {
     val: string;
     keybind?: Keybind;
+    color?: string;
 }
 
 interface QuickTagFile {
@@ -88,7 +89,8 @@ interface QuickTagFile {
 interface CustomTagInfo {
     value: string,
     type: 'custom' | 'note';
-    index: number
+    index: number;
+    color?: string;
 }
 
 
@@ -467,7 +469,14 @@ class QTTrack implements QuickTagFile {
             for (let value of custom) {
                 let v = value.trim()
                 if (v) {
-                    out.push({value: v, type: 'custom', index: i});
+                    // Find color from settings
+                    let colorValue = this.settings.custom[i]?.values.find(val => val.val === v);
+                    out.push({
+                        value: v,
+                        type: 'custom',
+                        index: i,
+                        color: colorValue?.color
+                    });
                 }
             }
             i += 1;

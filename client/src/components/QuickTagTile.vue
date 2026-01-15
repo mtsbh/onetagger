@@ -77,14 +77,14 @@
         <!-- Custom tags -->
         <div class='row q-mx-sm no-wrap overflow-hidden custom-tag-chips text-subtitle2'>
             <div v-for='(tag, i) in track.getAllCustom()' :key='"qtc"+i'  @click='removeCustom(tag)'>
-                <q-chip 
+                <q-chip
                     icon='mdi-close'
-                    dense 
-                    square 
-                    :label='tag.value' 
-                    outline 
-                    color='primary' 
-                    class='qt-tile-chip' 
+                    dense
+                    square
+                    :label='tag.value'
+                    :outline='!tag.color'
+                    :color='tag.color || "primary"'
+                    class='qt-tile-chip'
                 ></q-chip>
             </div>
         </div>
