@@ -69,6 +69,7 @@ interface QuickTagCustom {
 interface QuickTagCustomValue {
     val: string;
     keybind?: Keybind;
+    color?: string;
 }
 
 interface QuickTagFile {
@@ -88,7 +89,8 @@ interface QuickTagFile {
 interface CustomTagInfo {
     value: string,
     type: 'custom' | 'note';
-    index: number
+    index: number;
+    color?: string;
 }
 
 
@@ -140,20 +142,29 @@ class QTMultiTrack {
         return this.tracks.find(t => t.path == track.path) !== undefined;
     }
 
-    /// Get mood of selected tracks (set / get for compatibility)
-    get mood(): string | undefined {
-        if (this.tracks.length == 0) return;
-        // All tracks have same mood
-        let mood = this.tracks[0].mood;
-        if (this.tracks.every(t => t.mood == mood)) return mood;
-        // Different moods = no mood selected
-        return;
+    /// Get moods present in all tracks
+    get moods(): string[] {
+        if (this.tracks.length == 0) return [];
+        return this.tracks[0].moods.filter(m => this.tracks.every(t => t.moods.includes(m)));
     }
 
-    /// Set the mood in selected tracks, (setter for compatibility)
-    set mood(mood: string | undefined) {
+    /// Toggle mood on all selected tracks
+    toggleMood(mood: string) {
+        // Remove if any track has it
+        if (this.tracks.find(t => t.moods.includes(mood))) {
+            for (let i=0; i<this.tracks.length; i++) {
+                let j = this.tracks[i].moods.indexOf(mood);
+                if (j != -1) {
+                    this.tracks[i].moods.splice(j, 1);
+                }
+            }
+            return;
+        }
+        // Add if no track has it
         for (let i=0; i<this.tracks.length; i++) {
-            this.tracks[i].mood = mood;
+            if (!this.tracks[i].moods.includes(mood)) {
+                this.tracks[i].moods.push(mood);
+            }
         }
     }
 
@@ -283,12 +294,13 @@ class QTTrack implements QuickTagFile {
     key?: string | undefined;
 
     // QTTrack
-    mood?: string;
+    moods: string[] = [];
     energy: number = 0;
     note: string;
     originalNote: string;
     custom: string[][] = [];
     originalGenres: string[];
+    originalMoods: string[];
 
     settings: QuickTagSettings;
 
@@ -297,13 +309,14 @@ class QTTrack implements QuickTagFile {
         Object.assign(this, data);
         this.settings = settings;
         this.genres = this.processGenreArray(this.genres);
-        this.mood = this.getMood();
+        this.moods = this.getMoods();
         this.energy = this.getEnergy();
         this.note = this.getNote();
         this.originalNote = this.note;
         this.custom = this.loadCustom();
         // Stupid copy
         this.originalGenres = JSON.parse(JSON.stringify(this.genres));
+        this.originalMoods = JSON.parse(JSON.stringify(this.moods));
         // Add subgenres
         if (settings.subgenreTag) {
             let subgenres = (this.tags[this.removeAbstractions(settings.subgenreTag.byFormat(this.format))] ?? []);
@@ -378,11 +391,19 @@ class QTTrack implements QuickTagFile {
         this.note = processedParts.join(',');
     }
 
-    // Get mood tag value
-    getMood() {
+    // Get mood tag values (multiple)
+    getMoods(): string[] {
         let field = this.removeAbstractions(this.settings.moodTag.byFormat(this.format));
-        if (this.tags[field]??[].length >= 1) {
-            return this.tags[field][0]
+        return this.tags[field] ?? [];
+    }
+
+    // Toggle mood (add/remove)
+    toggleMood(mood: string) {
+        let i = this.moods.indexOf(mood);
+        if (i == -1) {
+            this.moods.push(mood);
+        } else {
+            this.moods.splice(i, 1);
         }
     }
 
@@ -467,7 +488,14 @@ class QTTrack implements QuickTagFile {
             for (let value of custom) {
                 let v = value.trim()
                 if (v) {
-                    out.push({value: v, type: 'custom', index: i});
+                    // Find color from settings
+                    let colorValue = this.settings.custom[i]?.values.find(val => val.val === v);
+                    out.push({
+                        value: v,
+                        type: 'custom',
+                        index: i,
+                        color: colorValue?.color
+                    });
                 }
             }
             i += 1;
@@ -485,12 +513,14 @@ class QTTrack implements QuickTagFile {
     // Get output tags
     getOutput() {
         let changes = [];
-        // Mood change
-        if (this.getMood() != this.mood) {
+        // Moods change (compare arrays)
+        const originalMoods = this.getMoods().sort().join(',');
+        const currentMoods = [...this.moods].sort().join(',');
+        if (originalMoods !== currentMoods) {
             changes.push({
                 type: 'raw',
                 tag: this.settings.moodTag.byFormat(this.format),
-                value: this.mood ? [this.mood] : []
+                value: this.moods
             });
         }
         // Energy change

@@ -96,36 +96,65 @@ pub struct CustomTagConfig {
 
 impl Default for CustomTagConfig {
     fn default() -> Self {
+        let mut custom_collections = HashMap::new();
+
+        // TAG2 - Special descriptors
+        custom_collections.insert(
+            "tag2".to_string(),
+            vec![
+                "Oldek".to_string(),
+                "Proper".to_string(),
+                "Slow".to_string(),
+                "Tool".to_string(),
+                "Vocal".to_string(),
+            ],
+        );
+
         Self {
-            // Example custom genres for DJs
+            // GENRE (17 tags)
             genres: vec![
-                "deep-techno".to_string(),
-                "melodic-techno".to_string(),
-                "peak-time-techno".to_string(),
-                "minimal-techno".to_string(),
-                "progressive-house".to_string(),
-                "deep-house".to_string(),
-                "tech-house".to_string(),
-                "melodic-house".to_string(),
+                "Ambient".to_string(),
+                "Acid".to_string(),
+                "Breaks".to_string(),
+                "Classic".to_string(),
+                "Deep".to_string(),
+                "Drum & Bass".to_string(),
+                "Dub".to_string(),
+                "Electro".to_string(),
+                "Funky".to_string(),
+                "House".to_string(),
+                "Jackin".to_string(),
+                "Jazzy".to_string(),
+                "Minimal".to_string(),
+                "Progressive".to_string(),
+                "Techouse".to_string(),
+                "Techno".to_string(),
+                "Tribal".to_string(),
             ],
-            // Example mood tags
+            // TAG1 - Mood tags (9 tags, multiple selections, write to COMMENT via custom tag)
             moods: vec![
-                "dark".to_string(),
-                "uplifting".to_string(),
-                "melancholic".to_string(),
-                "euphoric".to_string(),
-                "hypnotic".to_string(),
-                "groovy".to_string(),
+                "Battle".to_string(),
+                "Beautiful".to_string(),
+                "Cosmic".to_string(),
+                "Dark".to_string(),
+                "Nasty".to_string(),
+                "Raw".to_string(),
+                "Schizo".to_string(),
+                "Trippy".to_string(),
+                "Upper".to_string(),
             ],
-            // Example vibe tags
+            // TIME - Situation tags (8 tags, single value, write to LABEL via MOOD field)
             vibes: vec![
-                "warehouse".to_string(),
-                "beach-sunset".to_string(),
-                "peak-time".to_string(),
-                "warm-up".to_string(),
-                "after-hours".to_string(),
+                "Intro".to_string(),
+                "Warmup".to_string(),
+                "Peak".to_string(),
+                "Filler".to_string(),
+                "After".to_string(),
+                "Outro".to_string(),
+                "Morning".to_string(),
+                "Daytime".to_string(),
             ],
-            custom_collections: HashMap::new(),
+            custom_collections,
         }
     }
 }
@@ -346,6 +375,11 @@ mod tests {
         let custom = CustomTagConfig::default();
         assert!(!custom.genres.is_empty());
         assert!(!custom.moods.is_empty());
-        assert!(custom.genres.contains(&"deep-techno".to_string()));
+        assert!(custom.genres.contains(&"Techno".to_string()));
+        assert!(custom.moods.contains(&"Dark".to_string()));
+        assert!(custom.vibes.contains(&"Peak".to_string()));
+        assert_eq!(custom.genres.len(), 17);
+        assert_eq!(custom.moods.len(), 9);
+        assert_eq!(custom.vibes.len(), 8);
     }
 }

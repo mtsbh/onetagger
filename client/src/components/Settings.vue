@@ -296,12 +296,25 @@
                         <template #item='{ element, index: j }'>
                             <div class='row'>
                                 <q-btn class='col-1 q-mt-sm' round flat icon='mdi-close' @click='$1t.settings.value.quickTag.custom[i].values.splice(j, 1)'></q-btn>
-                                <q-input 
-                                    class='col-9 q-px-sm q-pt-sm' 
-                                    dense 
-                                    filled 
+                                <q-input
+                                    class='col-5 q-px-sm q-pt-sm'
+                                    dense
+                                    filled
+                                    label='Value'
                                     v-model='$1t.settings.value.quickTag.custom[i].values[j].val'
                                 ></q-input>
+                                <q-select
+                                    v-model='$1t.settings.value.quickTag.custom[i].values[j].color'
+                                    dense
+                                    filled
+                                    label='Color'
+                                    :options='colors'
+                                    :label-color='$1t.settings.value.quickTag.custom[i].values[j].color || "grey"'
+                                    :color='$1t.settings.value.quickTag.custom[i].values[j].color || "grey"'
+                                    class='col-3 q-px-sm q-pt-sm'
+                                    popup-content-class='no-shadow'
+                                    clearable
+                                ></q-select>
                                 <KeybindVue
                                     class='col-2 text-center q-pt-sm'
                                     v-model='$1t.settings.value.quickTag.custom[i].values[j].keybind'

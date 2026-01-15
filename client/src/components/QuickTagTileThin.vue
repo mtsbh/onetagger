@@ -5,14 +5,14 @@
         <div class='text-caption text-grey-4 text-weight-medium q-px-sm text-no-wrap ellipsis' style='width: 12vw;'>{{ track.title }}</div>
         <div class='text-caption title-span text-grey-6 text-weight-medium q-px-sm text-no-wrap ellipsis' style='width: 12vw;'>{{ track.artists.join(", ") }}</div>
 
-        <!-- Mood -->
+        <!-- Mood (show first) -->
         <div class='q-px-sm text-center text-weight-medium' style='width: 8vw;'>
-            <q-chip 
-                dense 
-                v-if='getMood(track.mood)' 
-                :color='getMood(track.mood)!.color'  
-                :outline='getMood(track.mood)!.outline'
-                :label='getMood(track.mood)!.mood'
+            <q-chip
+                dense
+                v-if='track.moods.length > 0 && getMood(track.moods[0])'
+                :color='getMood(track.moods[0])!.color'
+                :outline='getMood(track.moods[0])!.outline'
+                :label='track.moods.length > 1 ? `${getMood(track.moods[0])!.mood} +${track.moods.length-1}` : getMood(track.moods[0])!.mood'
                 class='text-no-wrap ellipsis'
             ></q-chip>
         </div>
