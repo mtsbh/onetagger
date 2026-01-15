@@ -25,14 +25,18 @@
                 </div>
                 <!-- Details -->
                 <div class='col-7 row text-center text-subtitle2 text-weight-medium items-center'>
-                    <div class='col-3 qt-tile-col' @click='removeMood(track.mood)'>
-                        <!-- Mood -->
-                        <q-chip 
-                            v-if='getMood(track.mood)'
-                            :color='getMood(track.mood)!.color + ""'
-                            :outline='getMood(track.mood)!.outline'
-                            :label='getMood(track.mood)!.mood'
+                    <div class='col-3 qt-tile-col'>
+                        <!-- Moods (multiple) -->
+                        <q-chip
+                            v-for='(mood, i) in track.moods'
+                            :key='"mood"+i'
+                            v-if='getMood(mood)'
+                            :color='getMood(mood)!.color + ""'
+                            :outline='getMood(mood)!.outline'
+                            :label='getMood(mood)!.mood'
                             class='cursor-pointer'
+                            @click='removeMood(mood)'
+                            dense
                         ></q-chip>
                     </div>
                     <div class='col-3 qt-tile-col'>
@@ -120,9 +124,9 @@ function getMood(name?: string) {
     return { mood: name, color: 'white', outline: true };
 }
 
-function removeMood(mood?: string) {
-    if (!mood || !selected.value) return;
-    track.value.mood = undefined;
+function removeMood(mood: string) {
+    if (!selected.value) return;
+    track.value.toggleMood(mood);
 }
 
 // Remove genre from track
