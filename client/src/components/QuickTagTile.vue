@@ -25,18 +25,14 @@
                 </div>
                 <!-- Details -->
                 <div class='col-7 row text-center text-subtitle2 text-weight-medium items-center'>
-                    <div class='col-3 qt-tile-col'>
-                        <!-- Moods (multiple) -->
-                        <q-chip
-                            v-for='(mood, i) in track.moods'
-                            :key='"mood"+i'
-                            v-if='getMood(mood)'
-                            :color='getMood(mood)!.color + ""'
-                            :outline='getMood(mood)!.outline'
-                            :label='getMood(mood)!.mood'
+                    <div class='col-3 qt-tile-col' @click='removeMood(track.mood)'>
+                        <!-- Mood -->
+                        <q-chip 
+                            v-if='getMood(track.mood)'
+                            :color='getMood(track.mood)!.color + ""'
+                            :outline='getMood(track.mood)!.outline'
+                            :label='getMood(track.mood)!.mood'
                             class='cursor-pointer'
-                            @click='removeMood(mood)'
-                            dense
                         ></q-chip>
                     </div>
                     <div class='col-3 qt-tile-col'>
@@ -81,14 +77,14 @@
         <!-- Custom tags -->
         <div class='row q-mx-sm no-wrap overflow-hidden custom-tag-chips text-subtitle2'>
             <div v-for='(tag, i) in track.getAllCustom()' :key='"qtc"+i'  @click='removeCustom(tag)'>
-                <q-chip
+                <q-chip 
                     icon='mdi-close'
-                    dense
-                    square
-                    :label='tag.value'
-                    :outline='!tag.color'
-                    :color='tag.color || "primary"'
-                    class='qt-tile-chip'
+                    dense 
+                    square 
+                    :label='tag.value' 
+                    outline 
+                    color='primary' 
+                    class='qt-tile-chip' 
                 ></q-chip>
             </div>
         </div>
@@ -124,9 +120,9 @@ function getMood(name?: string) {
     return { mood: name, color: 'white', outline: true };
 }
 
-function removeMood(mood: string) {
-    if (!selected.value) return;
-    track.value.toggleMood(mood);
+function removeMood(mood?: string) {
+    if (!mood || !selected.value) return;
+    track.value.mood = undefined;
 }
 
 // Remove genre from track

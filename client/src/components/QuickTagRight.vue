@@ -18,17 +18,14 @@
             :switch-toggle-side='false'
         >
             <!-- Values -->
-            <div class='row q-mt-sm'>
-                <div v-for='(value, j) in tag.values' :key='i+"value"+j' class='q-mr-xs q-mb-xs'>
-                    <q-chip
-                        :label='value.val'
-                        :outline='!selected(i, value.val)'
-                        :color='value.color || "grey"'
-                        clickable
-                        @click='valueClick(i, value.val)'
-                        class='text-subtitle2'
-                    ></q-chip>
-                </div>
+            <div v-for='(value, j) in tag.values' :key='i+"value"+j'>
+                <q-checkbox
+                    :label='value.val'
+                    :model-value='selected(i, value.val)'
+                    @update:model-value='valueClick(i, value.val)'
+                    dense
+                    class='text-subtitle2 text-grey-5 full-width q-mt-xs'
+                ></q-checkbox>
             </div>
 
             <!-- Add new -->
