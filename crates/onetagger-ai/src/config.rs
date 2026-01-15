@@ -96,8 +96,22 @@ pub struct CustomTagConfig {
 
 impl Default for CustomTagConfig {
     fn default() -> Self {
+        let mut custom_collections = HashMap::new();
+
+        // TAG2 - Special descriptors
+        custom_collections.insert(
+            "tag2".to_string(),
+            vec![
+                "Oldek".to_string(),
+                "Proper".to_string(),
+                "Slow".to_string(),
+                "Tool".to_string(),
+                "Vocal".to_string(),
+            ],
+        );
+
         Self {
-            // User's genres
+            // GENRE (17 tags)
             genres: vec![
                 "Ambient".to_string(),
                 "Acid".to_string(),
@@ -117,21 +131,19 @@ impl Default for CustomTagConfig {
                 "Techno".to_string(),
                 "Tribal".to_string(),
             ],
-            // Mood tags (multiple selections, write to COMMENT via custom tag)
+            // TAG1 - Mood tags (9 tags, multiple selections, write to COMMENT via custom tag)
             moods: vec![
-                "Trippy".to_string(),
                 "Battle".to_string(),
                 "Beautiful".to_string(),
-                "Oldek".to_string(),
-                "Proper".to_string(),
-                "Upper".to_string(),
-                "Dark".to_string(),
-                "Schizo".to_string(),
-                "Nasty".to_string(),
                 "Cosmic".to_string(),
+                "Dark".to_string(),
+                "Nasty".to_string(),
                 "Raw".to_string(),
+                "Schizo".to_string(),
+                "Trippy".to_string(),
+                "Upper".to_string(),
             ],
-            // Situation tags (single value, write to LABEL via MOOD field)
+            // TIME - Situation tags (8 tags, single value, write to LABEL via MOOD field)
             vibes: vec![
                 "Intro".to_string(),
                 "Warmup".to_string(),
@@ -141,9 +153,8 @@ impl Default for CustomTagConfig {
                 "Outro".to_string(),
                 "Morning".to_string(),
                 "Daytime".to_string(),
-                "Tool".to_string(),
             ],
-            custom_collections: HashMap::new(),
+            custom_collections,
         }
     }
 }
@@ -364,6 +375,11 @@ mod tests {
         let custom = CustomTagConfig::default();
         assert!(!custom.genres.is_empty());
         assert!(!custom.moods.is_empty());
-        assert!(custom.genres.contains(&"deep-techno".to_string()));
+        assert!(custom.genres.contains(&"Techno".to_string()));
+        assert!(custom.moods.contains(&"Dark".to_string()));
+        assert!(custom.vibes.contains(&"Peak".to_string()));
+        assert_eq!(custom.genres.len(), 17);
+        assert_eq!(custom.moods.len(), 9);
+        assert_eq!(custom.vibes.len(), 8);
     }
 }

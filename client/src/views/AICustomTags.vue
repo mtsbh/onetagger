@@ -251,26 +251,31 @@ export default {
         'Ambient',
         'Acid',
         'Breaks',
+        'Classic',
         'Deep',
+        'Drum & Bass',
         'Dub',
         'Electro',
+        'Funky',
         'House',
+        'Jackin',
+        'Jazzy',
         'Minimal',
-        'Techno',
+        'Progressive',
         'Techouse',
+        'Techno',
+        'Tribal',
       ],
       moods: [
-        'Dark',
-        'Cosmic',
-        'Beautiful',
-        'Nasty',
-        'Trippy',
         'Battle',
-        'Upper',
-        'Proper',
-        'Schizo',
+        'Beautiful',
+        'Cosmic',
+        'Dark',
+        'Nasty',
         'Raw',
-        'Oldek',
+        'Schizo',
+        'Trippy',
+        'Upper',
       ],
       vibes: [
         'Intro',
@@ -281,7 +286,6 @@ export default {
         'Outro',
         'Morning',
         'Daytime',
-        'Tool',
       ],
     });
 
@@ -345,9 +349,9 @@ export default {
 
     const resetToDefaults = () => {
       customTags.value = {
-        genres: ['Ambient', 'Techno', 'House', 'Minimal'],
-        moods: ['Dark', 'Cosmic', 'Beautiful', 'Upper'],
-        vibes: ['Intro', 'Warmup', 'Peak', 'After'],
+        genres: ['Ambient', 'Techno', 'House', 'Minimal', 'Deep'],
+        moods: ['Dark', 'Cosmic', 'Beautiful', 'Upper', 'Battle'],
+        vibes: ['Intro', 'Warmup', 'Peak', 'After', 'Outro'],
       };
       $q.notify({
         type: 'info',
@@ -365,7 +369,7 @@ export default {
         },
         house: {
           genres: ['House', 'Techouse', 'Deep', 'Funky'],
-          moods: ['Upper', 'Beautiful', 'Proper'],
+          moods: ['Upper', 'Beautiful', 'Trippy'],
           vibes: ['Warmup', 'Peak', 'Daytime'],
         },
         trance: {
@@ -375,7 +379,7 @@ export default {
         },
         hiphop: {
           genres: ['Breaks', 'Drum & Bass'],
-          moods: ['Battle', 'Nasty', 'Upper'],
+          moods: ['Battle', 'Nasty', 'Raw'],
           vibes: ['Peak', 'Filler'],
         },
       };
