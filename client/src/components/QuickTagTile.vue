@@ -27,17 +27,17 @@
                 <div class='col-7 row text-center text-subtitle2 text-weight-medium items-center'>
                     <div class='col-3 qt-tile-col'>
                         <!-- Moods (multiple) -->
-                        <template v-for='(mood, i) in track.moods' :key='"mood"+i'>
-                            <q-chip
-                                v-if='getMood(mood)'
-                                :color='getMood(mood)!.color + ""'
-                                :outline='getMood(mood)!.outline'
-                                :label='getMood(mood)!.mood'
-                                class='cursor-pointer'
-                                @click='removeMood(mood)'
-                                dense
-                            ></q-chip>
-                        </template>
+                        <q-chip
+                            v-for='(mood, i) in track.moods'
+                            :key='"mood"+i'
+                            v-if='getMood(mood)'
+                            :color='getMood(mood)!.color + ""'
+                            :outline='getMood(mood)!.outline'
+                            :label='getMood(mood)!.mood'
+                            class='cursor-pointer'
+                            @click='removeMood(mood)'
+                            dense
+                        ></q-chip>
                     </div>
                     <div class='col-3 qt-tile-col'>
                         <!-- Track rating -->
