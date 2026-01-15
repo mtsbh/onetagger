@@ -683,7 +683,7 @@ class OneTagger {
             // Moods
             this.settings.value.quickTag.moods.forEach((mood) => {
                 if (Keybind.check(event, mood.keybind)) {
-                    this.quickTag.value.track!.mood = mood.mood;
+                    this.quickTag.value.track!.toggleMood(mood.mood);
                 }
             });
             // Genres
