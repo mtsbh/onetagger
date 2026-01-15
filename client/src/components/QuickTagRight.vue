@@ -22,11 +22,12 @@
                 <div v-for='(value, j) in tag.values' :key='i+"value"+j' class='q-mr-xs q-mb-xs'>
                     <q-chip
                         :label='value.val'
-                        :outline='!selected(i, value.val)'
+                        :outline='!(selected(i, value.val) || valueHover === `${i}-${j}`)'
                         :color='value.color || "grey"'
-                        clickable
                         @click='valueClick(i, value.val)'
-                        class='text-subtitle2'
+                        @mousemove='valueHover = `${i}-${j}`'
+                        @mouseleave='valueHover = ""'
+                        class='pointer text-weight-medium'
                     ></q-chip>
                 </div>
             </div>
@@ -63,6 +64,7 @@ import { get1t } from '../scripts/onetagger.js';
 const $1t = get1t();
 const newTag = ref(-1);
 const newTagValue = ref<string | undefined>(undefined);
+const valueHover = ref('');
 
 // If the value is present in tag
 function selected(tag: number, value: string) {
