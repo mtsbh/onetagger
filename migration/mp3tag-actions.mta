@@ -1,0 +1,115 @@
+[#0]
+T=5
+1=Replace with regular expression
+2=COMMENT
+3=\\bmazn\\b|\\bstirk\\b
+4=Nasty
+5=1
+
+[#1]
+T=5
+1=Replace with regular expression
+2=COMMENT
+3=\\bslow\\b|\\bmzi\\b|\\bslomz\\b
+4=Dark
+5=1
+
+[#2]
+T=5
+1=Replace with regular expression
+2=COMMENT
+3=\\batmosfera\\b
+4=Cosmic
+5=1
+
+[#3]
+T=5
+1=Replace with regular expression
+2=COMMENT
+3=\\btrippy\\b|\\botnesen\\b
+4=Trippy
+5=1
+
+[#4]
+T=5
+1=Replace with regular expression
+2=COMMENT
+3=\\bekek\\b|\\bsopa\\b|\\bnacepin\\b
+4=Battle
+5=1
+
+[#5]
+T=5
+1=Replace with regular expression
+2=COMMENT
+3=\\butifyl\\b|\\bplacha\\b
+4=Beautiful
+5=1
+
+[#6]
+T=5
+1=Replace with regular expression
+2=COMMENT
+3=\\boldek\\b|\\bhals\\b
+4=Oldek
+5=1
+
+[#7]
+T=5
+1=Replace with regular expression
+2=COMMENT
+3=\\bextract\\b|\\bserioja\\b
+4=Proper
+5=1
+
+[#8]
+T=5
+1=Replace with regular expression
+2=COMMENT
+3=\\blaso\\b|\\bkopon\\b|\\bbomb\\b
+4=Upper
+5=1
+
+[#9]
+T=5
+1=Replace with regular expression
+2=COMMENT
+3=\\bschizo\\b|\\belectric\\b
+4=Schizo
+5=1
+
+[#10]
+T=5
+1=Replace with regular expression
+2=COMMENT
+3=\\bprod\\b|\\btreti\\b
+4=Raw
+5=1
+
+[#11]
+T=5
+1=Replace with regular expression
+2=COMMENT
+3=\\bpodlojki\\b
+4=Filler
+5=1
+
+[#12]
+T=5
+1=Replace with regular expression
+2=COMMENT
+3=\\bpachanga\\b
+4=Daytime
+5=1
+
+[#13]
+T=9
+1=Move GENRE to LABEL if situation tag
+2=LABEL
+3=$if($or($eql(%GENRE%,After),$eql(%GENRE%,Morning),$eql(%GENRE%,Sustain),$eql(%GENRE%,Intro),$eql(%GENRE%,Warmup),$eql(%GENRE%,Peak),$eql(%GENRE%,Filler),$eql(%GENRE%,Outro),$eql(%GENRE%,Daytime)),%GENRE%,%LABEL%)
+
+[#14]
+T=9
+1=Clean GENRE field if moved
+2=GENRE
+3=$if($or($eql(%GENRE%,After),$eql(%GENRE%,Morning),$eql(%GENRE%,Sustain),$eql(%GENRE%,Intro),$eql(%GENRE%,Warmup),$eql(%GENRE%,Peak),$eql(%GENRE%,Filler),$eql(%GENRE%,Outro),$eql(%GENRE%,Daytime)),,%GENRE%)
