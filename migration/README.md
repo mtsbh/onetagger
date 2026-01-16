@@ -23,6 +23,64 @@ This migration converts your old personal tagging system to the new standardized
 - Situation tags (After, Morning, Intro, Peak, etc.) → Move from GENRE to LABEL
 - COMMENT field preserves MixedInKey format: `9A - 5 - tags`
 
+## ⚠️ IMPORTANT: Test First!
+
+Before migrating 4000+ tracks, **TEST on a few files first!**
+
+### Step 1: Preview Changes (No File Modification)
+
+Test what WOULD happen to your tags:
+```bash
+python test_migration.py ~/Music/track1.mp3 ~/Music/track2.mp3 ~/Music/track3.mp3
+```
+
+This shows:
+- Current tags
+- How they'll be mapped
+- What the new COMMENT/GENRE/LABEL will look like
+- Any unmapped tags that need manual review
+
+### Step 2: Test on a Small Batch
+
+Pick 10-20 representative tracks and migrate them:
+```bash
+# Using Python script (recommended for testing)
+python migrate_tags.py ~/Music/test_folder/ --apply
+
+# Or using Mp3tag
+# Just select 10-20 files instead of all
+```
+
+### Step 3: Validate Results
+
+Check if the migration worked correctly:
+```bash
+# Validate specific files
+python validate_migration.py ~/Music/test_folder/track1.mp3
+
+# Validate entire test folder
+python validate_migration.py ~/Music/test_folder/
+
+# Validate with limit (first 100 files)
+python validate_migration.py ~/Music/ 100
+```
+
+The validation script checks for:
+- ✓ Old tags are removed
+- ✓ New tags are in correct fields
+- ✓ MixedInKey format is preserved
+- ⚠ Warns about unknown/unusual tags
+
+### Step 4: Review in OneTagger & Rekordbox
+
+Load the test tracks in:
+1. **OneTagger** - Check Quick Tag shows correct moods/situations
+2. **Rekordbox** - Verify colored tags, labels, comments look right
+
+If everything looks good → proceed with full migration!
+
+---
+
 ## Method 1: Mp3tag (Windows - Recommended)
 
 1. **Import action group:**
