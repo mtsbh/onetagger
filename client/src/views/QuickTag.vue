@@ -365,12 +365,12 @@ function filterTracks() {
         if (filter.value) {
             let newFilter = filter.value.toLowerCase();
             // title, artist or track or tags
-            tracks = $1t.quickTag.value.tracks.filter((t) =>
+            tracks = $1t.quickTag.value.tracks.filter((t) => 
                 t.title.toLowerCase().match(newFilter) || t.path.toLowerCase().match(newFilter) ||
                 t.artists.filter((a: any) => a.toLowerCase().match(newFilter)).length > 0 ||
-                (t.moods??[]).some((m: string) => m.toLowerCase().match(newFilter)) ||
+                (t.mood??'').toLowerCase().match(newFilter) ||
                 t.getAllCustom().some((i: CustomTagInfo) => i.value.toLowerCase().match(newFilter)) ||
-                (t.genres??[]).some((i: any) => i.toLowerCase().match(newFilter))
+                (t.genres??[]).some((i: any) => i.toLowerCase().match(newFilter)) 
             );
         }
         if (!sortOption.value) return tracks;

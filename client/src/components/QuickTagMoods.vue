@@ -25,14 +25,15 @@ const $1t = get1t();
 const moodHover = ref(-1);
 
 
-// If mood is in track data (check if included in array)
+// If mood is in track data
 function moodSelected(mood: QuickTagMood) {
-    return $1t.quickTag.value.track.moods.includes(mood.mood);
+    return $1t.quickTag.value.track.mood == mood.mood;
 }
 
-// Toggle mood (like genres - multiple selection)
+// Set mood
 function moodSelect(mood: QuickTagMood) {
-    $1t.quickTag.value.track.toggleMood(mood.mood);
+    if ($1t.quickTag.value.track.mood == mood.mood) $1t.quickTag.value.track.mood = undefined;
+    else $1t.quickTag.value.track.mood = mood.mood;
 }
 
 </script>
