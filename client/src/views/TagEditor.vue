@@ -439,29 +439,35 @@
                     header-class="bg-dark text-grey-3"
                     class="q-mb-sm">
                     <q-card class="bg-darker q-pa-md">
-                        <div class="q-gutter-sm">
-                            <q-select
-                                dense
-                                filled
-                                v-model="bulkOperations.replace.field"
-                                :options="fieldOptions"
-                                label="Field"
-                            />
-                            <q-input
-                                dense
-                                filled
-                                v-model="bulkOperations.replace.find"
-                                label="Find"
-                                placeholder="Text to find"
-                            />
-                            <q-input
-                                dense
-                                filled
-                                v-model="bulkOperations.replace.replaceWith"
-                                label="Replace with"
-                                placeholder="Replacement text"
-                            />
-                            <div class="row q-gutter-sm">
+                        <div class="q-gutter-md">
+                            <div>
+                                <q-select
+                                    dense
+                                    filled
+                                    v-model="bulkOperations.replace.field"
+                                    :options="fieldOptions"
+                                    label="Field"
+                                />
+                            </div>
+                            <div>
+                                <q-input
+                                    dense
+                                    filled
+                                    v-model="bulkOperations.replace.find"
+                                    label="Find"
+                                    placeholder="Text to find"
+                                />
+                            </div>
+                            <div>
+                                <q-input
+                                    dense
+                                    filled
+                                    v-model="bulkOperations.replace.replaceWith"
+                                    label="Replace with"
+                                    placeholder="Replacement text"
+                                />
+                            </div>
+                            <div class="row q-gutter-md">
                                 <q-checkbox v-model="bulkOperations.replace.caseSensitive" label="Case sensitive" dense />
                                 <q-checkbox v-model="bulkOperations.replace.useRegex" label="Use regex" dense />
                             </div>
@@ -477,15 +483,17 @@
                     header-class="bg-dark text-grey-3"
                     class="q-mb-sm">
                     <q-card class="bg-darker q-pa-md">
-                        <div class="q-gutter-sm">
-                            <q-select
-                                dense
-                                filled
-                                v-model="bulkOperations.trim.field"
-                                :options="['ALL FIELDS', ...fieldOptions]"
-                                label="Field"
-                            />
-                            <div class="row q-gutter-sm">
+                        <div class="q-gutter-md">
+                            <div>
+                                <q-select
+                                    dense
+                                    filled
+                                    v-model="bulkOperations.trim.field"
+                                    :options="['ALL FIELDS', ...fieldOptions]"
+                                    label="Field"
+                                />
+                            </div>
+                            <div class="row q-gutter-md">
                                 <q-checkbox v-model="bulkOperations.trim.leading" label="Leading" dense />
                                 <q-checkbox v-model="bulkOperations.trim.trailing" label="Trailing" dense />
                             </div>
@@ -501,22 +509,28 @@
                     header-class="bg-dark text-grey-3"
                     class="q-mb-sm">
                     <q-card class="bg-darker q-pa-md">
-                        <div class="q-gutter-sm">
-                            <q-select
-                                dense
-                                filled
-                                v-model="bulkOperations.copyField.from"
-                                :options="fieldOptions"
-                                label="From"
-                            />
-                            <q-select
-                                dense
-                                filled
-                                v-model="bulkOperations.copyField.to"
-                                :options="fieldOptions"
-                                label="To"
-                            />
-                            <q-checkbox v-model="bulkOperations.copyField.append" label="Append (not replace)" dense />
+                        <div class="q-gutter-md">
+                            <div>
+                                <q-select
+                                    dense
+                                    filled
+                                    v-model="bulkOperations.copyField.from"
+                                    :options="fieldOptions"
+                                    label="From"
+                                />
+                            </div>
+                            <div>
+                                <q-select
+                                    dense
+                                    filled
+                                    v-model="bulkOperations.copyField.to"
+                                    :options="fieldOptions"
+                                    label="To"
+                                />
+                            </div>
+                            <div>
+                                <q-checkbox v-model="bulkOperations.copyField.append" label="Append (not replace)" dense />
+                            </div>
                         </div>
                     </q-card>
                 </q-expansion-item>
@@ -529,21 +543,25 @@
                     header-class="bg-dark text-grey-3"
                     class="q-mb-sm">
                     <q-card class="bg-darker q-pa-md">
-                        <div class="q-gutter-sm">
-                            <q-select
-                                dense
-                                filled
-                                v-model="bulkOperations.changeCase.field"
-                                :options="['ALL FIELDS', ...fieldOptions]"
-                                label="Field"
-                            />
-                            <q-select
-                                dense
-                                filled
-                                v-model="bulkOperations.changeCase.case"
-                                :options="['Title Case', 'UPPERCASE', 'lowercase']"
-                                label="Case"
-                            />
+                        <div class="q-gutter-md">
+                            <div>
+                                <q-select
+                                    dense
+                                    filled
+                                    v-model="bulkOperations.changeCase.field"
+                                    :options="['ALL FIELDS', ...fieldOptions]"
+                                    label="Field"
+                                />
+                            </div>
+                            <div>
+                                <q-select
+                                    dense
+                                    filled
+                                    v-model="bulkOperations.changeCase.case"
+                                    :options="['Title Case', 'UPPERCASE', 'lowercase']"
+                                    label="Case"
+                                />
+                            </div>
                         </div>
                     </q-card>
                 </q-expansion-item>
@@ -556,28 +574,34 @@
                     header-class="bg-dark text-grey-3"
                     class="q-mb-sm">
                     <q-card class="bg-darker q-pa-md">
-                        <div class="q-gutter-sm">
-                            <q-select
-                                dense
-                                filled
-                                v-model="bulkOperations.addPrefixSuffix.field"
-                                :options="fieldOptions"
-                                label="Field"
-                            />
-                            <q-input
-                                dense
-                                filled
-                                v-model="bulkOperations.addPrefixSuffix.prefix"
-                                label="Prefix"
-                                placeholder="Text to add at the beginning"
-                            />
-                            <q-input
-                                dense
-                                filled
-                                v-model="bulkOperations.addPrefixSuffix.suffix"
-                                label="Suffix"
-                                placeholder="Text to add at the end"
-                            />
+                        <div class="q-gutter-md">
+                            <div>
+                                <q-select
+                                    dense
+                                    filled
+                                    v-model="bulkOperations.addPrefixSuffix.field"
+                                    :options="fieldOptions"
+                                    label="Field"
+                                />
+                            </div>
+                            <div>
+                                <q-input
+                                    dense
+                                    filled
+                                    v-model="bulkOperations.addPrefixSuffix.prefix"
+                                    label="Prefix"
+                                    placeholder="Text to add at the beginning"
+                                />
+                            </div>
+                            <div>
+                                <q-input
+                                    dense
+                                    filled
+                                    v-model="bulkOperations.addPrefixSuffix.suffix"
+                                    label="Suffix"
+                                    placeholder="Text to add at the end"
+                                />
+                            </div>
                         </div>
                     </q-card>
                 </q-expansion-item>
@@ -590,22 +614,28 @@
                     header-class="bg-dark text-grey-3"
                     class="q-mb-sm">
                     <q-card class="bg-darker q-pa-md">
-                        <div class="q-gutter-sm">
-                            <q-select
-                                dense
-                                filled
-                                v-model="bulkOperations.removeText.field"
-                                :options="fieldOptions"
-                                label="Field"
-                            />
-                            <q-input
-                                dense
-                                filled
-                                v-model="bulkOperations.removeText.removeText"
-                                label="Text to remove"
-                                placeholder="Text to remove from field"
-                            />
-                            <q-checkbox v-model="bulkOperations.removeText.caseSensitive" label="Case sensitive" dense />
+                        <div class="q-gutter-md">
+                            <div>
+                                <q-select
+                                    dense
+                                    filled
+                                    v-model="bulkOperations.removeText.field"
+                                    :options="fieldOptions"
+                                    label="Field"
+                                />
+                            </div>
+                            <div>
+                                <q-input
+                                    dense
+                                    filled
+                                    v-model="bulkOperations.removeText.removeText"
+                                    label="Text to remove"
+                                    placeholder="Text to remove from field"
+                                />
+                            </div>
+                            <div>
+                                <q-checkbox v-model="bulkOperations.removeText.caseSensitive" label="Case sensitive" dense />
+                            </div>
                         </div>
                     </q-card>
                 </q-expansion-item>
@@ -618,28 +648,34 @@
                     header-class="bg-dark text-grey-3"
                     class="q-mb-sm">
                     <q-card class="bg-darker q-pa-md">
-                        <div class="q-gutter-sm">
-                            <q-select
-                                dense
-                                filled
-                                v-model="bulkOperations.splitField.field"
-                                :options="fieldOptions"
-                                label="Field"
-                            />
-                            <q-input
-                                dense
-                                filled
-                                v-model="bulkOperations.splitField.separator"
-                                label="Separator"
-                                placeholder="e.g., , or ; or /"
-                            />
-                            <q-select
-                                dense
-                                filled
-                                v-model="bulkOperations.splitField.keepPart"
-                                :options="['first', 'last', 'all (join with space)']"
-                                label="Keep Part"
-                            />
+                        <div class="q-gutter-md">
+                            <div>
+                                <q-select
+                                    dense
+                                    filled
+                                    v-model="bulkOperations.splitField.field"
+                                    :options="fieldOptions"
+                                    label="Field"
+                                />
+                            </div>
+                            <div>
+                                <q-input
+                                    dense
+                                    filled
+                                    v-model="bulkOperations.splitField.separator"
+                                    label="Separator"
+                                    placeholder="e.g., , or ; or /"
+                                />
+                            </div>
+                            <div>
+                                <q-select
+                                    dense
+                                    filled
+                                    v-model="bulkOperations.splitField.keepPart"
+                                    :options="['first', 'last', 'all (join with space)']"
+                                    label="Keep Part"
+                                />
+                            </div>
                         </div>
                     </q-card>
                 </q-expansion-item>
@@ -652,25 +688,29 @@
                     header-class="bg-dark text-grey-3"
                     class="q-mb-sm">
                     <q-card class="bg-darker q-pa-md">
-                        <div class="q-gutter-sm">
-                            <q-input
-                                dense
-                                filled
-                                v-model.number="bulkOperations.numberTracks.startFrom"
-                                type="number"
-                                label="Start from"
-                                min="1"
-                            />
-                            <q-input
-                                dense
-                                filled
-                                v-model.number="bulkOperations.numberTracks.padding"
-                                type="number"
-                                label="Zero padding"
-                                min="1"
-                                max="4"
-                                hint="e.g., 2 = 01, 02, 03..."
-                            />
+                        <div class="q-gutter-md">
+                            <div>
+                                <q-input
+                                    dense
+                                    filled
+                                    v-model.number="bulkOperations.numberTracks.startFrom"
+                                    type="number"
+                                    label="Start from"
+                                    min="1"
+                                />
+                            </div>
+                            <div>
+                                <q-input
+                                    dense
+                                    filled
+                                    v-model.number="bulkOperations.numberTracks.padding"
+                                    type="number"
+                                    label="Zero padding"
+                                    min="1"
+                                    max="4"
+                                />
+                                <div class="text-caption text-grey-5 q-mt-xs">e.g., 2 = 01, 02, 03...</div>
+                            </div>
                         </div>
                     </q-card>
                 </q-expansion-item>
