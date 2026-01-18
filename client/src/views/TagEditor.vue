@@ -3,41 +3,51 @@
 
     <div class='row full-height'>
         <!-- File browser -->
-        <div 
-            @contextmenu.prevent="" 
-            class='q-px-md q-pt-md bg-darker' 
+        <div
+            @contextmenu.prevent=""
+            class='q-px-md q-pt-md bg-darker'
             :class='{"col-4": !$1t.settings.value.tagEditorDouble, "col-3": $1t.settings.value.tagEditorDouble}'
             style='max-height: 100%; overflow-y: scroll;'
         >
-            <div class='row items-center justify-between'>
-                <div class='text-weight-bold text-subtitle2 clickable path-display' @click='browse'>
+            <div class='row items-center justify-between q-mb-sm'>
+                <div class='text-weight-bold text-subtitle2 clickable path-display' @click='browse' style="flex: 1;">
                     <div class='row inline'>
                         <span style="direction:ltr;" class='text-primary monospace'>{{path}}</span>
                     </div>
                 </div>
-                <q-btn
-                    dense
-                    flat
-                    round
-                    size="sm"
-                    :icon="bulkMode ? 'mdi-file-edit' : 'mdi-file-multiple'"
-                    @click="toggleBulkMode"
-                    :color="bulkMode ? 'primary' : 'grey-4'"
-                >
-                    <q-tooltip>{{ bulkMode ? 'Single Edit Mode' : 'Bulk Operations Mode' }}</q-tooltip>
-                </q-btn>
             </div>
+
+            <!-- Bulk Mode Toggle (Always Visible) -->
+            <div class="q-mb-sm">
+                <q-btn-toggle
+                    v-model="bulkMode"
+                    spread
+                    dense
+                    no-caps
+                    toggle-color="primary"
+                    color="dark"
+                    text-color="grey-4"
+                    :options="[
+                        {label: 'Single Edit', value: false},
+                        {label: 'Bulk Operations', value: true}
+                    ]"
+                    @update:model-value="onModeChange"
+                />
+            </div>
+
             <div class='q-mt-sm'>
 
                 <!-- Filter -->
                 <q-input dense filled label='Filter' class='q-mb-sm' @update:model-value='(v: any) => applyFilter(v as string)' v-model='filter'></q-input>
 
                 <!-- Bulk mode controls -->
-                <div v-if="bulkMode" class="row q-mb-sm q-gutter-xs">
-                    <q-btn dense size="xs" flat label="Select All" @click="selectAllFiles" color="primary" />
-                    <q-btn dense size="xs" flat label="None" @click="clearSelection" color="grey-4" />
-                    <div class="text-caption text-grey-5 q-ml-auto q-mt-xs">
-                        {{ selectedFilesCount }} selected
+                <div v-if="bulkMode" class="q-mb-sm bg-dark q-pa-sm rounded-borders">
+                    <div class="row q-mb-xs q-gutter-xs items-center">
+                        <q-btn dense size="xs" push label="Select All" @click="selectAllFiles" color="primary" icon="mdi-checkbox-multiple-marked" />
+                        <q-btn dense size="xs" push label="Clear" @click="clearSelection" color="grey-7" icon="mdi-close" />
+                    </div>
+                    <div class="text-caption text-grey-4 text-center">
+                        <strong class="text-primary">{{ selectedFilesCount }}</strong> files selected
                     </div>
                 </div>
 
@@ -60,6 +70,7 @@
                             @click='handleFileClick(file)'
                             :class='{"text-primary": !bulkMode && isSelected(file.path), "text-grey-4": !bulkMode && !isSelected(file.path)}'
                         >
+                            <!-- Checkbox for files in bulk mode -->
                             <q-checkbox
                                 v-if="bulkMode && !file.dir && !file.playlist"
                                 dense
@@ -69,6 +80,20 @@
                                 size="xs"
                                 class="q-mr-xs"
                             />
+                            <!-- Button for folders in bulk mode to select all files in folder -->
+                            <q-btn
+                                v-if="bulkMode && file.dir"
+                                dense
+                                flat
+                                round
+                                size="xs"
+                                icon="mdi-checkbox-marked-circle-plus-outline"
+                                @click.stop="selectFolder(file.filename)"
+                                color="primary"
+                                class="q-mr-xs"
+                            >
+                                <q-tooltip>Select all files in this folder</q-tooltip>
+                            </q-btn>
                             <q-icon size='xs' class='q-mb-xs text-grey-4' v-if='!file.dir && !file.playlist' name='mdi-music'></q-icon>
                             <q-icon size='xs' class='q-mb-xs text-grey-4' v-if='file.dir' name='mdi-folder'></q-icon>
                             <q-icon size='xs' class='q-mb-xs text-grey-4' v-if='file.playlist' name='mdi-playlist-music'></q-icon>
@@ -689,14 +714,50 @@ function toggleBulkMode() {
     }
 }
 
+function onModeChange(newMode: boolean) {
+    if (!newMode) {
+        selectedFiles.value.clear();
+        bulkPreview.value = '';
+    }
+}
+
 function handleFileClick(fileItem: any) {
     if (fileItem.dir || fileItem.playlist) {
-        loadFiles(fileItem.filename);
+        if (!bulkMode.value) {
+            loadFiles(fileItem.filename);
+        }
     } else if (bulkMode.value) {
         toggleFileSelection(fileItem.path);
     } else {
         loadFile(fileItem.path);
     }
+}
+
+async function selectFolder(folderName: string) {
+    // Request backend to load all files from the folder recursively
+    const currentPath = path.value;
+    const folderPath = currentPath + '/' + folderName;
+
+    $q.notify({
+        message: `Loading files from ${folderName}...`,
+        color: 'info',
+        position: 'top-right',
+        timeout: 1000
+    });
+
+    // Send request to load folder recursively
+    $1t.send('tagEditorFolder', {
+        path: currentPath,
+        subdir: folderName,
+        recursive: true
+    });
+
+    // The response will come through onTagEditorEvent and populate files.value
+    // Then we'll auto-select all audio files
+    // Give it a moment to load
+    setTimeout(() => {
+        selectAllFiles();
+    }, 500);
 }
 
 function isFileSelected(path: string) {
