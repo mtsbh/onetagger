@@ -420,6 +420,17 @@
                     Bulk Operations ({{ selectedFilesCount }} files selected)
                 </div>
 
+                <!-- Current Tags Viewer (Click a file to see tags) -->
+                <div v-if="file && bulkMode" class="q-mb-md q-pa-md bg-dark rounded-borders">
+                    <div class="text-subtitle2 text-primary q-mb-sm">Current Tags: {{ file.filename }}</div>
+                    <div class="q-gutter-xs">
+                        <div v-for="(value, tag) in file.tags" :key="tag" class="row items-center">
+                            <div class="col-4 text-caption text-grey-4 text-uppercase">{{ tag }}</div>
+                            <div class="col-8 text-caption text-grey-3">{{ value }}</div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Replace Text Operation -->
                 <q-expansion-item
                     v-model="bulkOperations.replace.enabled"
@@ -537,6 +548,133 @@
                     </q-card>
                 </q-expansion-item>
 
+                <!-- Add Prefix/Suffix Operation -->
+                <q-expansion-item
+                    v-model="bulkOperations.addPrefixSuffix.enabled"
+                    icon="mdi-format-text-wrapping-wrap"
+                    label="Add Prefix/Suffix"
+                    header-class="bg-dark text-grey-3"
+                    class="q-mb-sm">
+                    <q-card class="bg-darker q-pa-md">
+                        <div class="q-gutter-sm">
+                            <q-select
+                                dense
+                                filled
+                                v-model="bulkOperations.addPrefixSuffix.field"
+                                :options="fieldOptions"
+                                label="Field"
+                            />
+                            <q-input
+                                dense
+                                filled
+                                v-model="bulkOperations.addPrefixSuffix.prefix"
+                                label="Prefix"
+                                placeholder="Text to add at the beginning"
+                            />
+                            <q-input
+                                dense
+                                filled
+                                v-model="bulkOperations.addPrefixSuffix.suffix"
+                                label="Suffix"
+                                placeholder="Text to add at the end"
+                            />
+                        </div>
+                    </q-card>
+                </q-expansion-item>
+
+                <!-- Remove Text Operation -->
+                <q-expansion-item
+                    v-model="bulkOperations.removeText.enabled"
+                    icon="mdi-eraser"
+                    label="Remove Text"
+                    header-class="bg-dark text-grey-3"
+                    class="q-mb-sm">
+                    <q-card class="bg-darker q-pa-md">
+                        <div class="q-gutter-sm">
+                            <q-select
+                                dense
+                                filled
+                                v-model="bulkOperations.removeText.field"
+                                :options="fieldOptions"
+                                label="Field"
+                            />
+                            <q-input
+                                dense
+                                filled
+                                v-model="bulkOperations.removeText.removeText"
+                                label="Text to remove"
+                                placeholder="Text to remove from field"
+                            />
+                            <q-checkbox v-model="bulkOperations.removeText.caseSensitive" label="Case sensitive" dense />
+                        </div>
+                    </q-card>
+                </q-expansion-item>
+
+                <!-- Split Field Operation -->
+                <q-expansion-item
+                    v-model="bulkOperations.splitField.enabled"
+                    icon="mdi-call-split"
+                    label="Split Field"
+                    header-class="bg-dark text-grey-3"
+                    class="q-mb-sm">
+                    <q-card class="bg-darker q-pa-md">
+                        <div class="q-gutter-sm">
+                            <q-select
+                                dense
+                                filled
+                                v-model="bulkOperations.splitField.field"
+                                :options="fieldOptions"
+                                label="Field"
+                            />
+                            <q-input
+                                dense
+                                filled
+                                v-model="bulkOperations.splitField.separator"
+                                label="Separator"
+                                placeholder="e.g., , or ; or /"
+                            />
+                            <q-select
+                                dense
+                                filled
+                                v-model="bulkOperations.splitField.keepPart"
+                                :options="['first', 'last', 'all (join with space)']"
+                                label="Keep Part"
+                            />
+                        </div>
+                    </q-card>
+                </q-expansion-item>
+
+                <!-- Number Tracks Operation -->
+                <q-expansion-item
+                    v-model="bulkOperations.numberTracks.enabled"
+                    icon="mdi-format-list-numbered"
+                    label="Number Tracks"
+                    header-class="bg-dark text-grey-3"
+                    class="q-mb-sm">
+                    <q-card class="bg-darker q-pa-md">
+                        <div class="q-gutter-sm">
+                            <q-input
+                                dense
+                                filled
+                                v-model.number="bulkOperations.numberTracks.startFrom"
+                                type="number"
+                                label="Start from"
+                                min="1"
+                            />
+                            <q-input
+                                dense
+                                filled
+                                v-model.number="bulkOperations.numberTracks.padding"
+                                type="number"
+                                label="Zero padding"
+                                min="1"
+                                max="4"
+                                hint="e.g., 2 = 01, 02, 03..."
+                            />
+                        </div>
+                    </q-card>
+                </q-expansion-item>
+
                 <!-- Preview and Apply buttons -->
                 <div class="row justify-end q-mt-lg q-gutter-sm">
                     <q-btn
@@ -644,6 +782,29 @@ const bulkOperations = ref({
         enabled: false,
         field: 'title',
         case: 'Title Case'
+    },
+    addPrefixSuffix: {
+        enabled: false,
+        field: 'title',
+        prefix: '',
+        suffix: ''
+    },
+    removeText: {
+        enabled: false,
+        field: 'title',
+        removeText: '',
+        caseSensitive: false
+    },
+    splitField: {
+        enabled: false,
+        field: 'artist',
+        separator: ',',
+        keepPart: 'first'
+    },
+    numberTracks: {
+        enabled: false,
+        startFrom: 1,
+        padding: 2
     }
 });
 
@@ -728,7 +889,9 @@ function handleFileClick(fileItem: any) {
             loadFiles(fileItem.filename);
         }
     } else if (bulkMode.value) {
+        // Toggle selection AND load tags to preview
         toggleFileSelection(fileItem.path);
+        loadFile(fileItem.path); // Load tags to show in preview
     } else {
         loadFile(fileItem.path);
     }
@@ -832,6 +995,35 @@ function applyOperationToTag(value: string, ops: any): string {
         }
     }
 
+    // Add Prefix/Suffix
+    if (ops.addPrefixSuffix.enabled) {
+        if (ops.addPrefixSuffix.prefix) {
+            result = ops.addPrefixSuffix.prefix + result;
+        }
+        if (ops.addPrefixSuffix.suffix) {
+            result = result + ops.addPrefixSuffix.suffix;
+        }
+    }
+
+    // Remove Text
+    if (ops.removeText.enabled && ops.removeText.removeText) {
+        const flags = ops.removeText.caseSensitive ? 'g' : 'gi';
+        const regex = new RegExp(ops.removeText.removeText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), flags);
+        result = result.replace(regex, '');
+    }
+
+    // Split Field
+    if (ops.splitField.enabled && ops.splitField.separator) {
+        const parts = result.split(ops.splitField.separator);
+        if (ops.splitField.keepPart === 'first') {
+            result = parts[0]?.trim() || result;
+        } else if (ops.splitField.keepPart === 'last') {
+            result = parts[parts.length - 1]?.trim() || result;
+        } else if (ops.splitField.keepPart === 'all (join with space)') {
+            result = parts.map(p => p.trim()).join(' ');
+        }
+    }
+
     return result;
 }
 
@@ -890,7 +1082,7 @@ async function applyBulkOperations() {
         const filePath = selectedPaths[i];
         try {
             // Load the file's tags (we'll need to wait for the response)
-            await loadAndProcessFile(filePath);
+            await loadAndProcessFile(filePath, i);
             successCount++;
         } catch (e) {
             console.error(`Failed to process ${filePath}:`, e);
@@ -917,7 +1109,7 @@ async function applyBulkOperations() {
     bulkPreview.value = '';
 }
 
-async function loadAndProcessFile(filePath: string): Promise<void> {
+async function loadAndProcessFile(filePath: string, index: number): Promise<void> {
     return new Promise((resolve, reject) => {
         // Load file tags
         $1t.send('tagEditorLoad', {path: filePath});
@@ -960,6 +1152,14 @@ async function loadAndProcessFile(filePath: string): Promise<void> {
                         }
                     }
 
+                    // Number Tracks operation
+                    if (bulkOperations.value.numberTracks.enabled) {
+                        const trackNum = bulkOperations.value.numberTracks.startFrom + index;
+                        const padded = trackNum.toString().padStart(bulkOperations.value.numberTracks.padding, '0');
+                        modifiedTags['track'] = padded;
+                        hasChanges = true;
+                    }
+
                     if (hasChanges) {
                         // Apply changes to file object
                         Object.assign(file.value.tags, modifiedTags);
@@ -994,6 +1194,15 @@ function shouldApplyToField(tagName: string): boolean {
         return true;
     }
     if (ops.changeCase.enabled && (ops.changeCase.field === 'ALL FIELDS' || tagName.toUpperCase().includes(ops.changeCase.field.toUpperCase()))) {
+        return true;
+    }
+    if (ops.addPrefixSuffix.enabled && tagName.toUpperCase().includes(ops.addPrefixSuffix.field.toUpperCase())) {
+        return true;
+    }
+    if (ops.removeText.enabled && tagName.toUpperCase().includes(ops.removeText.field.toUpperCase())) {
+        return true;
+    }
+    if (ops.splitField.enabled && tagName.toUpperCase().includes(ops.splitField.field.toUpperCase())) {
         return true;
     }
 
