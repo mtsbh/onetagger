@@ -455,6 +455,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { get1t } from '../scripts/onetagger';
 import { useQuasar } from 'quasar';
+import { QuickTagFile } from '../scripts/quicktag';
 
 const $1t = get1t();
 const $q = useQuasar();
@@ -548,44 +549,39 @@ const hasEnabledOperations = computed(() =>
 );
 
 // Methods
-async function selectFolder() {
-    try {
-        const result = await $1t.send('browseFolder', {});
-        if (result && result.path) {
-            await loadFiles(result.path);
-        }
-    } catch (e) {
-        console.error('Failed to select folder:', e);
-    }
+function selectFolder() {
+    // Use OneTagger's existing browse functionality
+    $1t.browse('bulktag');
 }
 
-async function loadFiles(folderPath: string) {
-    try {
-        // Use OneTagger's existing file loading
-        const result = await $1t.send('loadFolder', { path: folderPath });
+function loadFromQuickTag() {
+    // Load files from QuickTag view if available
+    if ($1t.quickTag.value.tracks && $1t.quickTag.value.tracks.length > 0) {
+        files.value = $1t.quickTag.value.tracks.map((track: QuickTagFile) => ({
+            path: track.path,
+            filename: track.path.split('/').pop() || track.path.split('\\').pop() || track.path,
+            selected: true,
+            title: track.title,
+            artist: track.artists?.join(', '),
+            tags: {
+                title: track.title,
+                artist: track.artists?.join(', '),
+                album: track.tags['ALBUM']?.[0] || track.tags['©alb']?.[0] || '',
+                date: track.year?.toString() || '',
+                genre: track.genres?.join(', ')
+            }
+        }));
 
-        if (result && result.files) {
-            files.value = result.files.map((file: any) => ({
-                path: file.path,
-                filename: file.filename || file.path.split('/').pop() || file.path.split('\\').pop(),
-                selected: true,
-                title: file.title,
-                artist: file.artist,
-                tags: file.tags || {}
-            }));
-
-            $q.notify({
-                message: `Loaded ${files.value.length} files`,
-                color: 'primary',
-                position: 'top-right',
-                timeout: 2000
-            });
-        }
-    } catch (e) {
-        console.error('Failed to load files:', e);
         $q.notify({
-            message: 'Failed to load files',
-            color: 'negative',
+            message: `Loaded ${files.value.length} files from QuickTag`,
+            color: 'primary',
+            position: 'top-right',
+            timeout: 2000
+        });
+    } else {
+        $q.notify({
+            message: 'No files in QuickTag. Please use QuickTag to load files first.',
+            color: 'warning',
             position: 'top-right'
         });
     }
@@ -655,27 +651,26 @@ async function apply() {
     try {
         // Apply to each selected file
         const selectedFiles = files.value.filter(f => f.selected);
-        let successCount = 0;
 
         for (const file of selectedFiles) {
             const newTags = { ...file.tags };
             applyOperationsToTags(newTags);
 
-            // Save using OneTagger's save method
-            const result = await $1t.send('saveTags', {
-                path: file.path,
-                tags: newTags
-            });
+            // Update local tags
+            file.tags = newTags;
 
-            if (result && result.success) {
-                file.tags = newTags;
-                successCount++;
+            // Update in QuickTag if the file exists there
+            const qtTrack = $1t.quickTag.value.tracks.find((t: QuickTagFile) => t.path === file.path);
+            if (qtTrack) {
+                if (newTags.title) qtTrack.title = newTags.title;
+                if (newTags.artist) qtTrack.artists = [newTags.artist];
+                // Note: album and date are stored in tags property, not as direct fields
             }
         }
 
         $q.notify({
-            message: `Successfully updated ${successCount}/${selectedFiles.length} files!`,
-            color: 'positive',
+            message: `Preview updated for ${selectedFiles.length} files! Use QuickTag to save changes.`,
+            color: 'info',
             position: 'top-right',
             timeout: 3000
         });
@@ -835,7 +830,7 @@ function playTrack(index: number) {
     currentTrackIndex.value = index;
 
     // Use OneTagger's player
-    $1t.player.value.load(file.path);
+    $1t.player.value.loadTrack(file.path);
     $1t.player.value.play();
     isPlaying.value = true;
 }
@@ -859,15 +854,15 @@ function playPrevious() {
     }
 }
 
-function onVolumeChange(val: number) {
-    $1t.player.value.setVolume(val / 100);
+function onVolumeChange(val: number | null) {
+    if (val !== null) {
+        $1t.player.value.setVolume(val / 100);
+    }
 }
 
 onMounted(() => {
-    // Load from current QuickTag folder if available
-    if ($1t.quickTag.value.path) {
-        loadFiles($1t.quickTag.value.path);
-    }
+    // Load from QuickTag if files are available
+    loadFromQuickTag();
 
     // Set initial volume
     $1t.player.value.setVolume(volume.value / 100);
