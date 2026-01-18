@@ -3,41 +3,51 @@
 
     <div class='row full-height'>
         <!-- File browser -->
-        <div 
-            @contextmenu.prevent="" 
-            class='q-px-md q-pt-md bg-darker' 
+        <div
+            @contextmenu.prevent=""
+            class='q-px-md q-pt-md bg-darker'
             :class='{"col-4": !$1t.settings.value.tagEditorDouble, "col-3": $1t.settings.value.tagEditorDouble}'
             style='max-height: 100%; overflow-y: scroll;'
         >
-            <div class='row items-center justify-between'>
-                <div class='text-weight-bold text-subtitle2 clickable path-display' @click='browse'>
+            <div class='row items-center justify-between q-mb-sm'>
+                <div class='text-weight-bold text-subtitle2 clickable path-display' @click='browse' style="flex: 1;">
                     <div class='row inline'>
                         <span style="direction:ltr;" class='text-primary monospace'>{{path}}</span>
                     </div>
                 </div>
-                <q-btn
-                    dense
-                    flat
-                    round
-                    size="sm"
-                    :icon="bulkMode ? 'mdi-file-edit' : 'mdi-file-multiple'"
-                    @click="toggleBulkMode"
-                    :color="bulkMode ? 'primary' : 'grey-4'"
-                >
-                    <q-tooltip>{{ bulkMode ? 'Single Edit Mode' : 'Bulk Operations Mode' }}</q-tooltip>
-                </q-btn>
             </div>
+
+            <!-- Bulk Mode Toggle (Always Visible) -->
+            <div class="q-mb-sm">
+                <q-btn-toggle
+                    v-model="bulkMode"
+                    spread
+                    dense
+                    no-caps
+                    toggle-color="primary"
+                    color="dark"
+                    text-color="grey-4"
+                    :options="[
+                        {label: 'Single Edit', value: false},
+                        {label: 'Bulk Operations', value: true}
+                    ]"
+                    @update:model-value="onModeChange"
+                />
+            </div>
+
             <div class='q-mt-sm'>
 
                 <!-- Filter -->
                 <q-input dense filled label='Filter' class='q-mb-sm' @update:model-value='(v: any) => applyFilter(v as string)' v-model='filter'></q-input>
 
                 <!-- Bulk mode controls -->
-                <div v-if="bulkMode" class="row q-mb-sm q-gutter-xs">
-                    <q-btn dense size="xs" flat label="Select All" @click="selectAllFiles" color="primary" />
-                    <q-btn dense size="xs" flat label="None" @click="clearSelection" color="grey-4" />
-                    <div class="text-caption text-grey-5 q-ml-auto q-mt-xs">
-                        {{ selectedFilesCount }} selected
+                <div v-if="bulkMode" class="q-mb-sm bg-dark q-pa-sm rounded-borders">
+                    <div class="row q-mb-xs q-gutter-xs items-center">
+                        <q-btn dense size="xs" push label="Select All" @click="selectAllFiles" color="primary" icon="mdi-checkbox-multiple-marked" />
+                        <q-btn dense size="xs" push label="Clear" @click="clearSelection" color="grey-7" icon="mdi-close" />
+                    </div>
+                    <div class="text-caption text-grey-4 text-center">
+                        <strong class="text-primary">{{ selectedFilesCount }}</strong> files selected
                     </div>
                 </div>
 
@@ -58,8 +68,10 @@
                         <div
                             class='clickable te-file row items-center no-wrap'
                             @click='handleFileClick(file)'
-                            :class='{"text-primary": !bulkMode && isSelected(file.path), "text-grey-4": !bulkMode && !isSelected(file.path)}'
+                            @dblclick='bulkMode && !file.dir ? playFile(file.path) : null'
+                            :class='{"text-primary": (!bulkMode && isSelected(file.path)) || (bulkMode && isFileSelected(file.path)), "text-grey-4": (!bulkMode && !isSelected(file.path)) && !(bulkMode && isFileSelected(file.path))}'
                         >
+                            <!-- Checkbox for files in bulk mode -->
                             <q-checkbox
                                 v-if="bulkMode && !file.dir && !file.playlist"
                                 dense
@@ -69,6 +81,20 @@
                                 size="xs"
                                 class="q-mr-xs"
                             />
+                            <!-- Button for folders in bulk mode to select all files in folder -->
+                            <q-btn
+                                v-if="bulkMode && file.dir"
+                                dense
+                                flat
+                                round
+                                size="xs"
+                                icon="mdi-checkbox-marked-circle-plus-outline"
+                                @click.stop="selectFolder(file.filename)"
+                                color="primary"
+                                class="q-mr-xs"
+                            >
+                                <q-tooltip>Select all files in this folder</q-tooltip>
+                            </q-btn>
                             <q-icon size='xs' class='q-mb-xs text-grey-4' v-if='!file.dir && !file.playlist' name='mdi-music'></q-icon>
                             <q-icon size='xs' class='q-mb-xs text-grey-4' v-if='file.dir' name='mdi-folder'></q-icon>
                             <q-icon size='xs' class='q-mb-xs text-grey-4' v-if='file.playlist' name='mdi-playlist-music'></q-icon>
@@ -689,14 +715,50 @@ function toggleBulkMode() {
     }
 }
 
+function onModeChange(newMode: boolean) {
+    if (!newMode) {
+        selectedFiles.value.clear();
+        bulkPreview.value = '';
+    }
+}
+
 function handleFileClick(fileItem: any) {
     if (fileItem.dir || fileItem.playlist) {
-        loadFiles(fileItem.filename);
+        if (!bulkMode.value) {
+            loadFiles(fileItem.filename);
+        }
     } else if (bulkMode.value) {
         toggleFileSelection(fileItem.path);
     } else {
         loadFile(fileItem.path);
     }
+}
+
+async function selectFolder(folderName: string) {
+    // Request backend to load all files from the folder recursively
+    const currentPath = path.value;
+    const folderPath = currentPath + '/' + folderName;
+
+    $q.notify({
+        message: `Loading files from ${folderName}...`,
+        color: 'info',
+        position: 'top-right',
+        timeout: 1000
+    });
+
+    // Send request to load folder recursively
+    $1t.send('tagEditorFolder', {
+        path: currentPath,
+        subdir: folderName,
+        recursive: true
+    });
+
+    // The response will come through onTagEditorEvent and populate files.value
+    // Then we'll auto-select all audio files
+    // Give it a moment to load
+    setTimeout(() => {
+        selectAllFiles();
+    }, 500);
 }
 
 function isFileSelected(path: string) {
@@ -721,6 +783,12 @@ function selectAllFiles() {
 
 function clearSelection() {
     selectedFiles.value.clear();
+}
+
+function playFile(filePath: string) {
+    // Play the file in the player
+    $1t.player.value.loadTrack(filePath);
+    $1t.player.value.play();
 }
 
 function applyOperationToTag(value: string, ops: any): string {
@@ -804,13 +872,136 @@ async function applyBulkOperations() {
 
     if (!confirmed) return;
 
-    // TODO: Implement actual bulk tag editing
-    // This would need backend support to batch process multiple files
-    $q.notify({
-        message: `Bulk operations will be implemented with backend support`,
-        color: 'info',
+    const selectedPaths = Array.from(selectedFiles.value);
+    let successCount = 0;
+    let errorCount = 0;
+
+    // Show progress
+    const progressNotif = $q.notify({
+        group: false,
+        timeout: 0,
+        spinner: true,
+        message: `Processing 0/${selectedPaths.length} files...`,
         position: 'top-right'
     });
+
+    // Process each file
+    for (let i = 0; i < selectedPaths.length; i++) {
+        const filePath = selectedPaths[i];
+        try {
+            // Load the file's tags (we'll need to wait for the response)
+            await loadAndProcessFile(filePath);
+            successCount++;
+        } catch (e) {
+            console.error(`Failed to process ${filePath}:`, e);
+            errorCount++;
+        }
+
+        // Update progress
+        progressNotif({
+            message: `Processing ${i + 1}/${selectedPaths.length} files...`
+        });
+    }
+
+    // Dismiss progress
+    progressNotif();
+
+    // Show result
+    $q.notify({
+        message: `Bulk operations complete! ${successCount} succeeded, ${errorCount} failed.`,
+        color: successCount > 0 ? 'positive' : 'negative',
+        position: 'top-right',
+        timeout: 3000
+    });
+
+    bulkPreview.value = '';
+}
+
+async function loadAndProcessFile(filePath: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+        // Load file tags
+        $1t.send('tagEditorLoad', {path: filePath});
+
+        // Listen for response
+        const checkLoaded = setInterval(() => {
+            if (file.value && file.value.path === filePath) {
+                clearInterval(checkLoaded);
+
+                try {
+                    // Apply operations to tags
+                    const modifiedTags: any = {};
+                    let hasChanges = false;
+
+                    for (const [tag, value] of Object.entries(file.value.tags)) {
+                        let newValue = value as string;
+
+                        // Apply operations based on field
+                        if (shouldApplyToField(tag)) {
+                            const processed = applyOperationsToValue(newValue, bulkOperations.value);
+                            if (processed !== newValue) {
+                                modifiedTags[tag] = processed;
+                                hasChanges = true;
+                            }
+                        }
+
+                        // Copy field operation
+                        if (bulkOperations.value.copyField.enabled) {
+                            const fromField = bulkOperations.value.copyField.from.toUpperCase();
+                            const toField = bulkOperations.value.copyField.to.toUpperCase();
+
+                            if (tag.toUpperCase().includes(fromField) && file.value.tags[toField]) {
+                                if (bulkOperations.value.copyField.append) {
+                                    modifiedTags[toField] = file.value.tags[toField] + ' ' + value;
+                                } else {
+                                    modifiedTags[toField] = value;
+                                }
+                                hasChanges = true;
+                            }
+                        }
+                    }
+
+                    if (hasChanges) {
+                        // Apply changes to file object
+                        Object.assign(file.value.tags, modifiedTags);
+
+                        // Save using existing save function
+                        save();
+                    }
+
+                    resolve();
+                } catch (e) {
+                    reject(e);
+                }
+            }
+        }, 100);
+
+        // Timeout after 5 seconds
+        setTimeout(() => {
+            clearInterval(checkLoaded);
+            reject(new Error('Timeout loading file'));
+        }, 5000);
+    });
+}
+
+function shouldApplyToField(tagName: string): boolean {
+    const ops = bulkOperations.value;
+
+    // Check if operations apply to this field
+    if (ops.replace.enabled && tagName.toUpperCase().includes(ops.replace.field.toUpperCase())) {
+        return true;
+    }
+    if (ops.trim.enabled && (ops.trim.field === 'ALL FIELDS' || tagName.toUpperCase().includes(ops.trim.field.toUpperCase()))) {
+        return true;
+    }
+    if (ops.changeCase.enabled && (ops.changeCase.field === 'ALL FIELDS' || tagName.toUpperCase().includes(ops.changeCase.field.toUpperCase()))) {
+        return true;
+    }
+
+    return false;
+}
+
+function applyOperationsToValue(value: string, ops: any): string {
+    return applyOperationToTag(value, ops);
 }
 
 /*
