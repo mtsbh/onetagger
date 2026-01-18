@@ -1,7 +1,7 @@
 <template>
 <div class="bulk-tag-container">
     <!-- Main content area -->
-    <div class="row" style="height: calc(100vh - 120px);">
+    <div class="row" style="height: calc(100vh - 220px);">
 
         <!-- Left: File List -->
         <div class="col-7 q-pa-md">
@@ -19,14 +19,16 @@
             </div>
 
             <!-- File list -->
-            <q-scroll-area style="height: calc(100vh - 280px);" class="bg-darker rounded-borders">
+            <q-scroll-area style="height: calc(100vh - 380px);" class="bg-darker rounded-borders">
                 <q-list dense>
                     <q-item
-                        v-for="file in files"
+                        v-for="(file, index) in files"
                         :key="file.path"
                         clickable
                         @click="toggleFile(file)"
+                        @dblclick="playTrack(index)"
                         class="file-item"
+                        :class="{ 'playing-track': currentTrack === file }"
                     >
                         <q-item-section avatar>
                             <q-checkbox
@@ -55,7 +57,7 @@
         <div class="col-5 q-pa-md bg-darker">
             <div class="text-h6 text-primary q-mb-md">Tag Operations</div>
 
-            <q-scroll-area style="height: calc(100vh - 340px);">
+            <q-scroll-area style="height: calc(100vh - 440px);">
 
                 <!-- Operation 1: Replace Text -->
                 <q-expansion-item
@@ -358,6 +360,94 @@
             </div>
         </div>
     </div>
+
+    <!-- Audio Player at bottom -->
+    <div class="player-bar bg-darker q-pa-md">
+        <div class="row items-center">
+            <!-- Now playing info -->
+            <div class="col-4">
+                <div v-if="currentTrack" class="text-caption text-grey-4">
+                    Now Playing
+                </div>
+                <div v-if="currentTrack" class="text-body2 text-grey-3">
+                    {{ currentTrack.filename }}
+                </div>
+                <div v-if="currentTrack" class="text-caption text-grey-6">
+                    {{ currentTrack.artist || 'Unknown' }} - {{ currentTrack.title || 'Unknown' }}
+                </div>
+                <div v-if="!currentTrack" class="text-caption text-grey-6">
+                    No track loaded
+                </div>
+            </div>
+
+            <!-- Player controls -->
+            <div class="col-4 text-center">
+                <q-btn
+                    flat
+                    round
+                    dense
+                    icon="mdi-skip-previous"
+                    @click="playPrevious"
+                    :disable="!currentTrack"
+                    color="grey-4"
+                />
+                <q-btn
+                    flat
+                    round
+                    icon="mdi-play"
+                    v-if="!isPlaying"
+                    @click="togglePlay"
+                    :disable="files.length === 0"
+                    color="primary"
+                    size="md"
+                    class="q-mx-sm"
+                />
+                <q-btn
+                    flat
+                    round
+                    icon="mdi-pause"
+                    v-if="isPlaying"
+                    @click="togglePlay"
+                    color="primary"
+                    size="md"
+                    class="q-mx-sm"
+                />
+                <q-btn
+                    flat
+                    round
+                    dense
+                    icon="mdi-stop"
+                    @click="stopPlayback"
+                    :disable="!currentTrack"
+                    color="grey-4"
+                />
+                <q-btn
+                    flat
+                    round
+                    dense
+                    icon="mdi-skip-next"
+                    @click="playNext"
+                    :disable="!currentTrack"
+                    color="grey-4"
+                />
+            </div>
+
+            <!-- Volume control -->
+            <div class="col-4 row items-center justify-end">
+                <q-icon name="mdi-volume-high" color="grey-4" class="q-mr-sm" />
+                <q-slider
+                    v-model="volume"
+                    :min="0"
+                    :max="100"
+                    @update:model-value="onVolumeChange"
+                    color="primary"
+                    style="width: 150px;"
+                    class="q-mr-sm"
+                />
+                <span class="text-caption text-grey-4" style="width: 35px;">{{ volume }}%</span>
+            </div>
+        </div>
+    </div>
 </div>
 </template>
 
@@ -394,6 +484,12 @@ interface BulkFile {
 
 const files = ref<BulkFile[]>([]);
 const previewText = ref('');
+
+// Player state
+const currentTrack = ref<BulkFile | null>(null);
+const currentTrackIndex = ref(-1);
+const isPlaying = ref(false);
+const volume = ref(70);
 
 // Operations state
 const operations = ref({
@@ -714,11 +810,67 @@ function applyOperationsToTags(tags: Record<string, any>) {
     }
 }
 
+// Player functions
+function togglePlay() {
+    if (isPlaying.value) {
+        // Pause
+        $1t.player.value.pause();
+        isPlaying.value = false;
+    } else {
+        // Play current or first file
+        if (!currentTrack.value && files.value.length > 0) {
+            playTrack(0);
+        } else if (currentTrack.value) {
+            $1t.player.value.play();
+            isPlaying.value = true;
+        }
+    }
+}
+
+function playTrack(index: number) {
+    if (index < 0 || index >= files.value.length) return;
+
+    const file = files.value[index];
+    currentTrack.value = file;
+    currentTrackIndex.value = index;
+
+    // Use OneTagger's player
+    $1t.player.value.load(file.path);
+    $1t.player.value.play();
+    isPlaying.value = true;
+}
+
+function stopPlayback() {
+    $1t.player.value.stop();
+    isPlaying.value = false;
+    currentTrack.value = null;
+    currentTrackIndex.value = -1;
+}
+
+function playNext() {
+    if (currentTrackIndex.value < files.value.length - 1) {
+        playTrack(currentTrackIndex.value + 1);
+    }
+}
+
+function playPrevious() {
+    if (currentTrackIndex.value > 0) {
+        playTrack(currentTrackIndex.value - 1);
+    }
+}
+
+function onVolumeChange(val: number) {
+    $1t.player.value.setVolume(val / 100);
+}
+
 onMounted(() => {
     // Load from current QuickTag folder if available
     if ($1t.quickTag.value.path) {
         loadFiles($1t.quickTag.value.path);
     }
+
+    // Set initial volume
+    $1t.player.value.setVolume(volume.value / 100);
 });
 </script>
 
@@ -732,6 +884,11 @@ onMounted(() => {
 
     &:hover {
         background-color: #2d2d2d;
+    }
+
+    &.playing-track {
+        background-color: #264f78;
+        border-left: 3px solid #0d7377;
     }
 }
 
@@ -752,5 +909,14 @@ onMounted(() => {
         white-space: pre-wrap;
         word-wrap: break-word;
     }
+}
+
+.player-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-top: 1px solid #3c3c3c;
+    z-index: 1000;
 }
 </style>
