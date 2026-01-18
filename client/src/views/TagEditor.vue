@@ -9,15 +9,37 @@
             :class='{"col-4": !$1t.settings.value.tagEditorDouble, "col-3": $1t.settings.value.tagEditorDouble}'
             style='max-height: 100%; overflow-y: scroll;'
         >
-            <div class='text-weight-bold text-subtitle2 clickable path-display' @click='browse'>
-                <div class='row inline'>
-                    <span style="direction:ltr;" class='text-primary monospace'>{{path}}</span>
+            <div class='row items-center justify-between'>
+                <div class='text-weight-bold text-subtitle2 clickable path-display' @click='browse'>
+                    <div class='row inline'>
+                        <span style="direction:ltr;" class='text-primary monospace'>{{path}}</span>
+                    </div>
                 </div>
+                <q-btn
+                    dense
+                    flat
+                    round
+                    size="sm"
+                    :icon="bulkMode ? 'mdi-file-edit' : 'mdi-file-multiple'"
+                    @click="toggleBulkMode"
+                    :color="bulkMode ? 'primary' : 'grey-4'"
+                >
+                    <q-tooltip>{{ bulkMode ? 'Single Edit Mode' : 'Bulk Operations Mode' }}</q-tooltip>
+                </q-btn>
             </div>
             <div class='q-mt-sm'>
 
                 <!-- Filter -->
                 <q-input dense filled label='Filter' class='q-mb-sm' @update:model-value='(v: any) => applyFilter(v as string)' v-model='filter'></q-input>
+
+                <!-- Bulk mode controls -->
+                <div v-if="bulkMode" class="row q-mb-sm q-gutter-xs">
+                    <q-btn dense size="xs" flat label="Select All" @click="selectAllFiles" color="primary" />
+                    <q-btn dense size="xs" flat label="None" @click="clearSelection" color="grey-4" />
+                    <div class="text-caption text-grey-5 q-ml-auto q-mt-xs">
+                        {{ selectedFilesCount }} selected
+                    </div>
+                </div>
 
                 <!-- Parent -->
                 <div class='q-mb-sm clickable te-file' @click='loadFiles("..")'>
@@ -25,19 +47,28 @@
                     <span class='q-ml-sm text-caption text-grey-4'>Parent folder</span>
                 </div>
 
-                <draggable 
-                    id='fileList' 
-                    :move='onFileMove' 
-                    group='files' 
-                    :list='files' 
+                <draggable
+                    id='fileList'
+                    :move='onFileMove'
+                    group='files'
+                    :list='files'
                     item-key='filename'
                     @change='onFileDrag'>
                     <template #item='{ element: file }'>
-                        <div 
-                            class='clickable te-file' 
-                            @click='(file.dir || file.playlist) ? loadFiles(file.filename) : loadFile(file.path)'
-                            :class='{"text-primary": isSelected(file.path), "text-grey-4": !isSelected(file.path)}'
+                        <div
+                            class='clickable te-file row items-center no-wrap'
+                            @click='handleFileClick(file)'
+                            :class='{"text-primary": !bulkMode && isSelected(file.path), "text-grey-4": !bulkMode && !isSelected(file.path)}'
                         >
+                            <q-checkbox
+                                v-if="bulkMode && !file.dir && !file.playlist"
+                                dense
+                                :model-value="isFileSelected(file.path)"
+                                @update:model-value="toggleFileSelection(file.path)"
+                                @click.stop
+                                size="xs"
+                                class="q-mr-xs"
+                            />
                             <q-icon size='xs' class='q-mb-xs text-grey-4' v-if='!file.dir && !file.playlist' name='mdi-music'></q-icon>
                             <q-icon size='xs' class='q-mb-xs text-grey-4' v-if='file.dir' name='mdi-folder'></q-icon>
                             <q-icon size='xs' class='q-mb-xs text-grey-4' v-if='file.playlist' name='mdi-playlist-music'></q-icon>
@@ -95,12 +126,13 @@
             </draggable>
         </div>
 
-        <!-- Tags -->
-        <div 
+        <!-- Tags (Single Edit Mode) -->
+        <div
+            v-if="!bulkMode"
             :class='{"col-8": !$1t.settings.value.tagEditorDouble, "col-6": $1t.settings.value.tagEditorDouble}'
             style='max-height: 100%; overflow-y: scroll;'>
             <div v-if='!file' class='justify-center items-center content-center row full-height'>
-                
+
                 <div class='col-12 text-subtitle2 text-bold text-primary text-center q-my-sm'>NO FILE SELECTED</div><br>
                 <span class='text-center text-subtitle2 text-grey-6'>Tip: <span class='keybind-icon q-px-sm text-caption text-bold'>CLICK</span> the path to open a folder and select an audio file</span>
             </div>
@@ -340,6 +372,176 @@
 
             </div>
         </div>
+
+        <!-- Bulk Operations Panel -->
+        <div
+            v-if="bulkMode"
+            :class='{"col-8": !$1t.settings.value.tagEditorDouble, "col-6": $1t.settings.value.tagEditorDouble}'
+            class="q-px-md q-pt-md"
+            style='max-height: 100%; overflow-y: scroll;'>
+
+            <!-- No files selected message -->
+            <div v-if="selectedFilesCount === 0" class='justify-center items-center content-center row full-height'>
+                <div>
+                    <div class='col-12 text-subtitle2 text-bold text-primary text-center q-my-sm'>NO FILES SELECTED</div>
+                    <span class='text-center text-subtitle2 text-grey-6'>Select audio files from the left panel to apply bulk operations</span>
+                </div>
+            </div>
+
+            <!-- Bulk operations -->
+            <div v-if="selectedFilesCount > 0">
+                <div class='text-center q-py-md text-subtitle2 text-primary'>
+                    Bulk Operations ({{ selectedFilesCount }} files selected)
+                </div>
+
+                <!-- Replace Text Operation -->
+                <q-expansion-item
+                    v-model="bulkOperations.replace.enabled"
+                    icon="mdi-find-replace"
+                    label="Replace Text"
+                    header-class="bg-dark text-grey-3"
+                    class="q-mb-sm">
+                    <q-card class="bg-darker q-pa-md">
+                        <div class="q-gutter-sm">
+                            <q-select
+                                dense
+                                filled
+                                v-model="bulkOperations.replace.field"
+                                :options="fieldOptions"
+                                label="Field"
+                            />
+                            <q-input
+                                dense
+                                filled
+                                v-model="bulkOperations.replace.find"
+                                label="Find"
+                                placeholder="Text to find"
+                            />
+                            <q-input
+                                dense
+                                filled
+                                v-model="bulkOperations.replace.replaceWith"
+                                label="Replace with"
+                                placeholder="Replacement text"
+                            />
+                            <div class="row q-gutter-sm">
+                                <q-checkbox v-model="bulkOperations.replace.caseSensitive" label="Case sensitive" dense />
+                                <q-checkbox v-model="bulkOperations.replace.useRegex" label="Use regex" dense />
+                            </div>
+                        </div>
+                    </q-card>
+                </q-expansion-item>
+
+                <!-- Trim Whitespace Operation -->
+                <q-expansion-item
+                    v-model="bulkOperations.trim.enabled"
+                    icon="mdi-format-text"
+                    label="Trim Whitespace"
+                    header-class="bg-dark text-grey-3"
+                    class="q-mb-sm">
+                    <q-card class="bg-darker q-pa-md">
+                        <div class="q-gutter-sm">
+                            <q-select
+                                dense
+                                filled
+                                v-model="bulkOperations.trim.field"
+                                :options="['ALL FIELDS', ...fieldOptions]"
+                                label="Field"
+                            />
+                            <div class="row q-gutter-sm">
+                                <q-checkbox v-model="bulkOperations.trim.leading" label="Leading" dense />
+                                <q-checkbox v-model="bulkOperations.trim.trailing" label="Trailing" dense />
+                            </div>
+                        </div>
+                    </q-card>
+                </q-expansion-item>
+
+                <!-- Copy Field Operation -->
+                <q-expansion-item
+                    v-model="bulkOperations.copyField.enabled"
+                    icon="mdi-content-copy"
+                    label="Copy Field"
+                    header-class="bg-dark text-grey-3"
+                    class="q-mb-sm">
+                    <q-card class="bg-darker q-pa-md">
+                        <div class="q-gutter-sm">
+                            <q-select
+                                dense
+                                filled
+                                v-model="bulkOperations.copyField.from"
+                                :options="fieldOptions"
+                                label="From"
+                            />
+                            <q-select
+                                dense
+                                filled
+                                v-model="bulkOperations.copyField.to"
+                                :options="fieldOptions"
+                                label="To"
+                            />
+                            <q-checkbox v-model="bulkOperations.copyField.append" label="Append (not replace)" dense />
+                        </div>
+                    </q-card>
+                </q-expansion-item>
+
+                <!-- Change Case Operation -->
+                <q-expansion-item
+                    v-model="bulkOperations.changeCase.enabled"
+                    icon="mdi-format-letter-case"
+                    label="Change Case"
+                    header-class="bg-dark text-grey-3"
+                    class="q-mb-sm">
+                    <q-card class="bg-darker q-pa-md">
+                        <div class="q-gutter-sm">
+                            <q-select
+                                dense
+                                filled
+                                v-model="bulkOperations.changeCase.field"
+                                :options="['ALL FIELDS', ...fieldOptions]"
+                                label="Field"
+                            />
+                            <q-select
+                                dense
+                                filled
+                                v-model="bulkOperations.changeCase.case"
+                                :options="['Title Case', 'UPPERCASE', 'lowercase']"
+                                label="Case"
+                            />
+                        </div>
+                    </q-card>
+                </q-expansion-item>
+
+                <!-- Preview and Apply buttons -->
+                <div class="row justify-end q-mt-lg q-gutter-sm">
+                    <q-btn
+                        dense
+                        push
+                        color="grey-7"
+                        class="rounded-borders q-px-md text-weight-medium"
+                        label="Preview"
+                        icon="mdi-eye"
+                        @click="previewBulkOperations"
+                        :disable="!hasEnabledBulkOperations"
+                    />
+                    <q-btn
+                        dense
+                        push
+                        color="primary"
+                        class="rounded-borders q-px-md text-weight-medium text-black"
+                        label="Apply"
+                        icon="mdi-check"
+                        @click="applyBulkOperations"
+                        :disable="!hasEnabledBulkOperations"
+                    />
+                </div>
+
+                <!-- Preview Text -->
+                <div v-if="bulkPreview" class="q-mt-lg q-pa-md bg-dark rounded-borders">
+                    <div class="text-subtitle2 text-primary q-mb-sm">Preview:</div>
+                    <div class="text-caption text-grey-4 monospace" style="white-space: pre-wrap;">{{ bulkPreview }}</div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Album art dialog -->
@@ -385,6 +587,59 @@ const customList = ref($1t.settings.value.tagEditorCustom);
 const id3v24 = ref(false);
 const manualTagPath = ref<string | undefined>(undefined);
 
+// Bulk mode state
+const bulkMode = ref(false);
+const selectedFiles = ref<Set<string>>(new Set());
+const bulkPreview = ref('');
+
+// Bulk operations state
+const bulkOperations = ref({
+    replace: {
+        enabled: false,
+        field: 'title',
+        find: '',
+        replaceWith: '',
+        caseSensitive: false,
+        useRegex: false
+    },
+    trim: {
+        enabled: false,
+        field: 'ALL FIELDS',
+        leading: true,
+        trailing: true
+    },
+    copyField: {
+        enabled: false,
+        from: 'artist',
+        to: 'album_artist',
+        append: false
+    },
+    changeCase: {
+        enabled: false,
+        field: 'title',
+        case: 'Title Case'
+    }
+});
+
+const fieldOptions = [
+    'title',
+    'artist',
+    'album',
+    'album_artist',
+    'genre',
+    'date',
+    'year',
+    'comment',
+    'track',
+    'disc'
+];
+
+// Computed properties for bulk mode
+const selectedFilesCount = computed(() => selectedFiles.value.size);
+const hasEnabledBulkOperations = computed(() =>
+    Object.values(bulkOperations.value).some((op: any) => op.enabled)
+);
+
 
 function loadFiles(f?: string) {
     $1t.send('tagEditorFolder', {path: path.value, subdir: f});
@@ -422,6 +677,141 @@ function applyFilter(v: string) {
     files.value = originalFiles.value.filter(f => f.filename.toLowerCase().includes(filter.value));
 }
 
+/*
+    Bulk Mode Functions
+*/
+
+function toggleBulkMode() {
+    bulkMode.value = !bulkMode.value;
+    if (!bulkMode.value) {
+        selectedFiles.value.clear();
+        bulkPreview.value = '';
+    }
+}
+
+function handleFileClick(fileItem: any) {
+    if (fileItem.dir || fileItem.playlist) {
+        loadFiles(fileItem.filename);
+    } else if (bulkMode.value) {
+        toggleFileSelection(fileItem.path);
+    } else {
+        loadFile(fileItem.path);
+    }
+}
+
+function isFileSelected(path: string) {
+    return selectedFiles.value.has(path);
+}
+
+function toggleFileSelection(path: string) {
+    if (selectedFiles.value.has(path)) {
+        selectedFiles.value.delete(path);
+    } else {
+        selectedFiles.value.add(path);
+    }
+}
+
+function selectAllFiles() {
+    files.value.forEach(f => {
+        if (!f.dir && !f.playlist) {
+            selectedFiles.value.add(f.path);
+        }
+    });
+}
+
+function clearSelection() {
+    selectedFiles.value.clear();
+}
+
+function applyOperationToTag(value: string, ops: any): string {
+    let result = value;
+
+    // Replace
+    if (ops.replace.enabled) {
+        if (ops.replace.useRegex) {
+            const flags = ops.replace.caseSensitive ? 'g' : 'gi';
+            const regex = new RegExp(ops.replace.find, flags);
+            result = result.replace(regex, ops.replace.replaceWith);
+        } else {
+            const searchValue = ops.replace.caseSensitive ? ops.replace.find : ops.replace.find.toLowerCase();
+            const checkValue = ops.replace.caseSensitive ? result : result.toLowerCase();
+            if (checkValue.includes(searchValue)) {
+                const regex = new RegExp(ops.replace.find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), ops.replace.caseSensitive ? 'g' : 'gi');
+                result = result.replace(regex, ops.replace.replaceWith);
+            }
+        }
+    }
+
+    // Trim
+    if (ops.trim.enabled) {
+        if (ops.trim.leading && ops.trim.trailing) {
+            result = result.trim();
+        } else if (ops.trim.leading) {
+            result = result.replace(/^\s+/, '');
+        } else if (ops.trim.trailing) {
+            result = result.replace(/\s+$/, '');
+        }
+    }
+
+    // Change case
+    if (ops.changeCase.enabled) {
+        if (ops.changeCase.case === 'Title Case') {
+            result = result.toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+        } else if (ops.changeCase.case === 'UPPERCASE') {
+            result = result.toUpperCase();
+        } else if (ops.changeCase.case === 'lowercase') {
+            result = result.toLowerCase();
+        }
+    }
+
+    return result;
+}
+
+function previewBulkOperations() {
+    let preview = 'Changes preview:\n\n';
+    let fileCount = 0;
+    const maxPreviewFiles = 5;
+
+    for (const filePath of Array.from(selectedFiles.value).slice(0, maxPreviewFiles)) {
+        const fileItem = files.value.find(f => f.path === filePath);
+        if (!fileItem) continue;
+
+        preview += `File: ${fileItem.filename}\n`;
+        fileCount++;
+
+        // Get current tags (this would need actual tag loading)
+        preview += '  Preview not yet implemented - tags will be modified when applying\n';
+        preview += '\n';
+    }
+
+    if (selectedFiles.value.size > maxPreviewFiles) {
+        preview += `... and ${selectedFiles.value.size - maxPreviewFiles} more files\n`;
+    }
+
+    bulkPreview.value = preview;
+}
+
+async function applyBulkOperations() {
+    const confirmed = await new Promise<boolean>(resolve => {
+        $q.dialog({
+            title: 'Confirm Bulk Operation',
+            message: `Apply operations to ${selectedFilesCount.value} files?`,
+            cancel: true,
+            persistent: true
+        }).onOk(() => resolve(true))
+          .onCancel(() => resolve(false));
+    });
+
+    if (!confirmed) return;
+
+    // TODO: Implement actual bulk tag editing
+    // This would need backend support to batch process multiple files
+    $q.notify({
+        message: `Bulk operations will be implemented with backend support`,
+        color: 'info',
+        position: 'top-right'
+    });
+}
 
 /*
     Custom list

@@ -10,7 +10,6 @@ const Autotagger = () => import('../views/Autotagger.vue');
 const QuickTag = () => import('../views/QuickTag.vue');
 const AudioFeatures = () => import('../views/AudioFeatures.vue');
 const AICustomTags = () => import('../views/AICustomTags.vue');
-const BulkTag = () => import('../views/BulkTag.vue');
 
 const history = createWebHashHistory();
 
@@ -50,10 +49,6 @@ const routes = [
     {
         path: '/ai-custom-tags',
         component: AICustomTags
-    },
-    {
-        path: '/bulktag',
-        component: BulkTag
     }
 ];
 
