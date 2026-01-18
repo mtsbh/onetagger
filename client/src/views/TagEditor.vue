@@ -68,7 +68,8 @@
                         <div
                             class='clickable te-file row items-center no-wrap'
                             @click='handleFileClick(file)'
-                            :class='{"text-primary": !bulkMode && isSelected(file.path), "text-grey-4": !bulkMode && !isSelected(file.path)}'
+                            @dblclick='bulkMode && !file.dir ? playFile(file.path) : null'
+                            :class='{"text-primary": (!bulkMode && isSelected(file.path)) || (bulkMode && isFileSelected(file.path)), "text-grey-4": (!bulkMode && !isSelected(file.path)) && !(bulkMode && isFileSelected(file.path))}'
                         >
                             <!-- Checkbox for files in bulk mode -->
                             <q-checkbox
@@ -784,6 +785,12 @@ function clearSelection() {
     selectedFiles.value.clear();
 }
 
+function playFile(filePath: string) {
+    // Play the file in the player
+    $1t.player.value.loadTrack(filePath);
+    $1t.player.value.play();
+}
+
 function applyOperationToTag(value: string, ops: any): string {
     let result = value;
 
@@ -865,13 +872,136 @@ async function applyBulkOperations() {
 
     if (!confirmed) return;
 
-    // TODO: Implement actual bulk tag editing
-    // This would need backend support to batch process multiple files
-    $q.notify({
-        message: `Bulk operations will be implemented with backend support`,
-        color: 'info',
+    const selectedPaths = Array.from(selectedFiles.value);
+    let successCount = 0;
+    let errorCount = 0;
+
+    // Show progress
+    const progressNotif = $q.notify({
+        group: false,
+        timeout: 0,
+        spinner: true,
+        message: `Processing 0/${selectedPaths.length} files...`,
         position: 'top-right'
     });
+
+    // Process each file
+    for (let i = 0; i < selectedPaths.length; i++) {
+        const filePath = selectedPaths[i];
+        try {
+            // Load the file's tags (we'll need to wait for the response)
+            await loadAndProcessFile(filePath);
+            successCount++;
+        } catch (e) {
+            console.error(`Failed to process ${filePath}:`, e);
+            errorCount++;
+        }
+
+        // Update progress
+        progressNotif({
+            message: `Processing ${i + 1}/${selectedPaths.length} files...`
+        });
+    }
+
+    // Dismiss progress
+    progressNotif();
+
+    // Show result
+    $q.notify({
+        message: `Bulk operations complete! ${successCount} succeeded, ${errorCount} failed.`,
+        color: successCount > 0 ? 'positive' : 'negative',
+        position: 'top-right',
+        timeout: 3000
+    });
+
+    bulkPreview.value = '';
+}
+
+async function loadAndProcessFile(filePath: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+        // Load file tags
+        $1t.send('tagEditorLoad', {path: filePath});
+
+        // Listen for response
+        const checkLoaded = setInterval(() => {
+            if (file.value && file.value.path === filePath) {
+                clearInterval(checkLoaded);
+
+                try {
+                    // Apply operations to tags
+                    const modifiedTags: any = {};
+                    let hasChanges = false;
+
+                    for (const [tag, value] of Object.entries(file.value.tags)) {
+                        let newValue = value as string;
+
+                        // Apply operations based on field
+                        if (shouldApplyToField(tag)) {
+                            const processed = applyOperationsToValue(newValue, bulkOperations.value);
+                            if (processed !== newValue) {
+                                modifiedTags[tag] = processed;
+                                hasChanges = true;
+                            }
+                        }
+
+                        // Copy field operation
+                        if (bulkOperations.value.copyField.enabled) {
+                            const fromField = bulkOperations.value.copyField.from.toUpperCase();
+                            const toField = bulkOperations.value.copyField.to.toUpperCase();
+
+                            if (tag.toUpperCase().includes(fromField) && file.value.tags[toField]) {
+                                if (bulkOperations.value.copyField.append) {
+                                    modifiedTags[toField] = file.value.tags[toField] + ' ' + value;
+                                } else {
+                                    modifiedTags[toField] = value;
+                                }
+                                hasChanges = true;
+                            }
+                        }
+                    }
+
+                    if (hasChanges) {
+                        // Apply changes to file object
+                        Object.assign(file.value.tags, modifiedTags);
+
+                        // Save using existing save function
+                        save();
+                    }
+
+                    resolve();
+                } catch (e) {
+                    reject(e);
+                }
+            }
+        }, 100);
+
+        // Timeout after 5 seconds
+        setTimeout(() => {
+            clearInterval(checkLoaded);
+            reject(new Error('Timeout loading file'));
+        }, 5000);
+    });
+}
+
+function shouldApplyToField(tagName: string): boolean {
+    const ops = bulkOperations.value;
+
+    // Check if operations apply to this field
+    if (ops.replace.enabled && tagName.toUpperCase().includes(ops.replace.field.toUpperCase())) {
+        return true;
+    }
+    if (ops.trim.enabled && (ops.trim.field === 'ALL FIELDS' || tagName.toUpperCase().includes(ops.trim.field.toUpperCase()))) {
+        return true;
+    }
+    if (ops.changeCase.enabled && (ops.changeCase.field === 'ALL FIELDS' || tagName.toUpperCase().includes(ops.changeCase.field.toUpperCase()))) {
+        return true;
+    }
+
+    return false;
+}
+
+function applyOperationsToValue(value: string, ops: any): string {
+    return applyOperationToTag(value, ops);
 }
 
 /*
