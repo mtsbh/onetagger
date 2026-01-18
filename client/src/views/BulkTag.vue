@@ -363,88 +363,81 @@
 
     <!-- Audio Player at bottom -->
     <div class="player-bar bg-darker q-pa-md">
-        <div class="row items-center">
-            <!-- Now playing info -->
-            <div class="col-4">
-                <div v-if="currentTrack" class="text-caption text-grey-4">
-                    Now Playing
+        <div class="row q-mx-md">
+            <!-- Meta -->
+            <div class="row col-2">
+                <!-- Album art -->
+                <div class="q-mt-sm">
+                    <q-img
+                        :src="art"
+                        width="46px"
+                        height="46px"
+                        class="rounded-borders"
+                        :placeholder-src="PLACEHOLDER_IMG"
+                    >
+                        <template v-slot:error>
+                            <q-img :src="PLACEHOLDER_IMG" width="46px" height="46px" class="rounded-borders"></q-img>
+                        </template>
+                    </q-img>
                 </div>
-                <div v-if="currentTrack" class="text-body2 text-grey-3">
-                    {{ currentTrack.filename }}
-                </div>
-                <div v-if="currentTrack" class="text-caption text-grey-6">
-                    {{ currentTrack.artist || 'Unknown' }} - {{ currentTrack.title || 'Unknown' }}
-                </div>
-                <div v-if="!currentTrack" class="text-caption text-grey-6">
-                    No track loaded
+
+                <div class="column q-mt-sm q-pt-xs q-pl-sm" style="width: calc(100% - 50px);">
+                    <div class="text-caption text-weight-bold full-width">
+                        <div v-if="$1t.player.value.title" class="text-no-wrap overflow-hidden" style="text-overflow: ellipsis">
+                            {{ $1t.player.value.title }}
+                        </div>
+                    </div>
+
+                    <div class="text-caption full-width text-grey-5">
+                        <div v-if="$1t.player.value.artists" class="text-no-wrap overflow-hidden" style="text-overflow: ellipsis">
+                            {{ $1t.player.value.artists.join(', ') }}
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Player controls -->
-            <div class="col-4 text-center">
-                <q-btn
-                    flat
-                    round
-                    dense
-                    icon="mdi-skip-previous"
-                    @click="playPrevious"
-                    :disable="!currentTrack"
-                    color="grey-4"
-                />
-                <q-btn
-                    flat
-                    round
-                    icon="mdi-play"
-                    v-if="!isPlaying"
-                    @click="togglePlay"
-                    :disable="files.length === 0"
-                    color="primary"
-                    size="md"
-                    class="q-mx-sm"
-                />
-                <q-btn
-                    flat
-                    round
-                    icon="mdi-pause"
-                    v-if="isPlaying"
-                    @click="togglePlay"
-                    color="primary"
-                    size="md"
-                    class="q-mx-sm"
-                />
-                <q-btn
-                    flat
-                    round
-                    dense
-                    icon="mdi-stop"
-                    @click="stopPlayback"
-                    :disable="!currentTrack"
-                    color="grey-4"
-                />
-                <q-btn
-                    flat
-                    round
-                    dense
-                    icon="mdi-skip-next"
-                    @click="playNext"
-                    :disable="!currentTrack"
-                    color="grey-4"
-                />
+            <!-- Waveform with controls -->
+            <div class="col-8">
+                <div class="row justify-center">
+                    <div class="q-mt-sm">
+                        <!-- Play button -->
+                        <q-btn
+                            round
+                            flat
+                            icon="mdi-play"
+                            class="q-mr-sm"
+                            :ripple="false"
+                            v-if="!$1t.player.value.playing"
+                            @click="$1t.player.value.play()"
+                        ></q-btn>
+                        <!-- Pause -->
+                        <q-btn
+                            round
+                            flat
+                            icon="mdi-pause"
+                            class="q-mr-sm"
+                            :ripple="false"
+                            v-else
+                            @click="$1t.player.value.pause()"
+                        ></q-btn>
+                    </div>
+
+                    <div><Waveform></Waveform></div>
+                </div>
             </div>
 
-            <!-- Volume control -->
-            <div class="col-4 row items-center justify-end">
-                <q-icon name="mdi-volume-high" color="grey-4" class="q-mr-sm" />
-                <q-slider
-                    v-model="volume"
-                    :min="0"
-                    :max="100"
-                    @update:model-value="onVolumeChange"
-                    color="primary"
-                    style="width: 150px;"
-                    class="q-mr-sm"
-                />
-                <span class="text-caption text-grey-4" style="width: 35px;">{{ volume }}%</span>
+            <!-- Volume -->
+            <div class="row col-2 justify-end">
+                <div class="q-pt-sm" style="width: 88px">
+                    <q-slider
+                        v-model="$1t.player.value.volume"
+                        :min="0.0"
+                        :max="1.0"
+                        :step="0.01"
+                        @update:model-value="onVolumeChange"
+                        style="margin-top: 6px"
+                    ></q-slider>
+                </div>
             </div>
         </div>
     </div>
@@ -455,7 +448,9 @@
 import { ref, computed, onMounted } from 'vue';
 import { get1t } from '../scripts/onetagger';
 import { useQuasar } from 'quasar';
-import { QuickTagFile } from '../scripts/quicktag';
+import { QuickTagFile, PLACEHOLDER_IMG } from '../scripts/quicktag';
+import { httpUrl } from '../scripts/utils';
+import Waveform from '../components/Waveform.vue';
 
 const $1t = get1t();
 const $q = useQuasar();
@@ -486,11 +481,9 @@ interface BulkFile {
 const files = ref<BulkFile[]>([]);
 const previewText = ref('');
 
-// Player state
+// Player state (kept for compatibility with file tracking)
 const currentTrack = ref<BulkFile | null>(null);
 const currentTrackIndex = ref(-1);
-const isPlaying = ref(false);
-const volume = ref(70);
 
 // Operations state
 const operations = ref({
@@ -547,6 +540,9 @@ const selectedCount = computed(() =>
 const hasEnabledOperations = computed(() =>
     Object.values(operations.value).some((op: any) => op.enabled)
 );
+
+// Album art for player
+const art = computed(() => `${httpUrl()}/thumb?path=${encodeURIComponent($1t.player.value.path??'')}`);
 
 // Methods
 function selectFolder() {
@@ -807,17 +803,15 @@ function applyOperationsToTags(tags: Record<string, any>) {
 
 // Player functions
 function togglePlay() {
-    if (isPlaying.value) {
+    if ($1t.player.value.playing) {
         // Pause
         $1t.player.value.pause();
-        isPlaying.value = false;
     } else {
         // Play current or first file
         if (!currentTrack.value && files.value.length > 0) {
             playTrack(0);
         } else if (currentTrack.value) {
             $1t.player.value.play();
-            isPlaying.value = true;
         }
     }
 }
@@ -832,12 +826,10 @@ function playTrack(index: number) {
     // Use OneTagger's player
     $1t.player.value.loadTrack(file.path);
     $1t.player.value.play();
-    isPlaying.value = true;
 }
 
 function stopPlayback() {
     $1t.player.value.stop();
-    isPlaying.value = false;
     currentTrack.value = null;
     currentTrackIndex.value = -1;
 }
@@ -856,16 +848,13 @@ function playPrevious() {
 
 function onVolumeChange(val: number | null) {
     if (val !== null) {
-        $1t.player.value.setVolume(val / 100);
+        $1t.player.value.setVolume(val);
     }
 }
 
 onMounted(() => {
     // Load from QuickTag if files are available
     loadFromQuickTag();
-
-    // Set initial volume
-    $1t.player.value.setVolume(volume.value / 100);
 });
 </script>
 
