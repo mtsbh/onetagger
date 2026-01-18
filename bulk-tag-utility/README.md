@@ -67,6 +67,7 @@ Supports all common tag fields:
 
 ### 🎨 Enhanced Interface
 
+- **Dark theme** - Easy on the eyes for long sessions
 - Clean 3-panel layout
 - Menu bar with keyboard shortcuts
 - Folder browser
@@ -76,7 +77,7 @@ Supports all common tag fields:
 
 ## Supported Formats
 
-MP3, FLAC, M4A/MP4, OGG, OPUS, WAV, WMA, AAC
+MP3, FLAC, M4A/MP4, OGG, OPUS, WAV, WMA, AAC, AIFF (.aif/.aiff)
 
 ## Installation
 

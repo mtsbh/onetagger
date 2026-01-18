@@ -315,17 +315,170 @@ class BulkTagUtility:
         self.config_dir.mkdir(exist_ok=True)
         self.presets_file = self.config_dir / 'presets.json'
 
+        # Dark theme colors
+        self.colors = {
+            'bg': '#1e1e1e',           # Main background
+            'bg_dark': '#161616',       # Darker background
+            'bg_light': '#2d2d2d',      # Lighter background for panels
+            'fg': '#e0e0e0',            # Text color
+            'fg_dim': '#a0a0a0',        # Dimmed text
+            'accent': '#0d7377',        # Accent color (teal)
+            'accent_light': '#14ffec', # Light accent
+            'border': '#3c3c3c',        # Border color
+            'button_bg': '#2d2d2d',     # Button background
+            'button_hover': '#3d3d3d',  # Button hover
+            'select_bg': '#264f78',     # Selection background
+            'entry_bg': '#252526',      # Entry/input background
+        }
+
+        self.setup_dark_theme()
         self.setup_ui()
         self.setup_menu()
         self.update_undo_buttons()
 
+    def setup_dark_theme(self):
+        """Configure dark theme for the application"""
+        # Set root window background
+        self.root.configure(bg=self.colors['bg'])
+
+        # Configure ttk styles
+        style = ttk.Style()
+        style.theme_use('clam')  # Use clam theme as base for better customization
+
+        # Configure general ttk widgets
+        style.configure('.',
+            background=self.colors['bg_light'],
+            foreground=self.colors['fg'],
+            fieldbackground=self.colors['entry_bg'],
+            bordercolor=self.colors['border'],
+            darkcolor=self.colors['bg_dark'],
+            lightcolor=self.colors['bg_light'],
+            troughcolor=self.colors['bg_dark'],
+            selectbackground=self.colors['select_bg'],
+            selectforeground=self.colors['fg']
+        )
+
+        # Frame
+        style.configure('TFrame',
+            background=self.colors['bg'],
+            bordercolor=self.colors['border']
+        )
+
+        # LabelFrame
+        style.configure('TLabelframe',
+            background=self.colors['bg'],
+            foreground=self.colors['fg'],
+            bordercolor=self.colors['border']
+        )
+        style.configure('TLabelframe.Label',
+            background=self.colors['bg'],
+            foreground=self.colors['fg']
+        )
+
+        # Button
+        style.configure('TButton',
+            background=self.colors['button_bg'],
+            foreground=self.colors['fg'],
+            bordercolor=self.colors['border'],
+            focuscolor=self.colors['accent'],
+            lightcolor=self.colors['button_bg'],
+            darkcolor=self.colors['button_bg']
+        )
+        style.map('TButton',
+            background=[('active', self.colors['button_hover']),
+                       ('pressed', self.colors['bg_dark'])]
+        )
+
+        # Checkbutton
+        style.configure('TCheckbutton',
+            background=self.colors['bg_light'],
+            foreground=self.colors['fg'],
+            indicatorcolor=self.colors['entry_bg']
+        )
+        style.map('TCheckbutton',
+            background=[('active', self.colors['bg_light'])]
+        )
+
+        # Radiobutton
+        style.configure('TRadiobutton',
+            background=self.colors['bg_light'],
+            foreground=self.colors['fg'],
+            indicatorcolor=self.colors['entry_bg']
+        )
+        style.map('TRadiobutton',
+            background=[('active', self.colors['bg_light'])]
+        )
+
+        # Label
+        style.configure('TLabel',
+            background=self.colors['bg_light'],
+            foreground=self.colors['fg']
+        )
+
+        # Entry
+        style.configure('TEntry',
+            fieldbackground=self.colors['entry_bg'],
+            foreground=self.colors['fg'],
+            bordercolor=self.colors['border'],
+            insertcolor=self.colors['fg']
+        )
+
+        # Combobox
+        style.configure('TCombobox',
+            fieldbackground=self.colors['entry_bg'],
+            background=self.colors['button_bg'],
+            foreground=self.colors['fg'],
+            arrowcolor=self.colors['fg'],
+            bordercolor=self.colors['border'],
+            selectbackground=self.colors['select_bg'],
+            selectforeground=self.colors['fg']
+        )
+        style.map('TCombobox',
+            fieldbackground=[('readonly', self.colors['entry_bg'])],
+            selectbackground=[('readonly', self.colors['entry_bg'])]
+        )
+
+        # Scale
+        style.configure('TScale',
+            background=self.colors['bg_light'],
+            troughcolor=self.colors['bg_dark'],
+            bordercolor=self.colors['border'],
+            sliderthickness=20
+        )
+
+        # Scrollbar
+        style.configure('TScrollbar',
+            background=self.colors['button_bg'],
+            troughcolor=self.colors['bg_dark'],
+            bordercolor=self.colors['border'],
+            arrowcolor=self.colors['fg']
+        )
+        style.map('TScrollbar',
+            background=[('active', self.colors['button_hover'])]
+        )
+
+        # Separator
+        style.configure('TSeparator',
+            background=self.colors['border']
+        )
+
     def setup_menu(self):
         """Setup menu bar"""
-        menubar = tk.Menu(self.root)
+        menubar = tk.Menu(self.root,
+            bg=self.colors['bg_light'],
+            fg=self.colors['fg'],
+            activebackground=self.colors['accent'],
+            activeforeground=self.colors['fg']
+        )
         self.root.config(menu=menubar)
 
         # File menu
-        file_menu = tk.Menu(menubar, tearoff=0)
+        file_menu = tk.Menu(menubar, tearoff=0,
+            bg=self.colors['bg_light'],
+            fg=self.colors['fg'],
+            activebackground=self.colors['accent'],
+            activeforeground=self.colors['fg']
+        )
         menubar.add_cascade(label="File", menu=file_menu)
         file_menu.add_command(label="Open Folder...", command=self.select_folder, accelerator="Ctrl+O")
         file_menu.add_separator()
@@ -335,7 +488,12 @@ class BulkTagUtility:
         file_menu.add_command(label="Exit", command=self.root.quit)
 
         # Edit menu
-        edit_menu = tk.Menu(menubar, tearoff=0)
+        edit_menu = tk.Menu(menubar, tearoff=0,
+            bg=self.colors['bg_light'],
+            fg=self.colors['fg'],
+            activebackground=self.colors['accent'],
+            activeforeground=self.colors['fg']
+        )
         menubar.add_cascade(label="Edit", menu=edit_menu)
         self.undo_menu_item = edit_menu.add_command(label="Undo", command=self.undo_last_action, accelerator="Ctrl+Z", state=tk.DISABLED)
         self.redo_menu_item = edit_menu.add_command(label="Redo", command=self.redo_last_action, accelerator="Ctrl+Y", state=tk.DISABLED)
@@ -402,7 +560,13 @@ class BulkTagUtility:
             file_list_frame,
             selectmode=tk.EXTENDED,
             yscrollcommand=scrollbar.set,
-            font=("Consolas", 9)
+            font=("Consolas", 9),
+            bg=self.colors['entry_bg'],
+            fg=self.colors['fg'],
+            selectbackground=self.colors['select_bg'],
+            selectforeground=self.colors['fg'],
+            highlightthickness=0,
+            borderwidth=0
         )
         self.file_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.file_listbox.bind('<<ListboxSelect>>', self.on_file_select)
@@ -413,7 +577,11 @@ class BulkTagUtility:
         ops_frame = ttk.LabelFrame(main_frame, text="⚙️ Tag Operations", padding=5)
         ops_frame.grid(row=0, column=2, sticky="nsew", padx=(2, 0))
 
-        ops_canvas = tk.Canvas(ops_frame, highlightthickness=0)
+        ops_canvas = tk.Canvas(ops_frame,
+            highlightthickness=0,
+            bg=self.colors['bg'],
+            borderwidth=0
+        )
         ops_scrollbar = ttk.Scrollbar(ops_frame, orient=tk.VERTICAL, command=ops_canvas.yview)
         self.ops_container = ttk.Frame(ops_canvas)
 
@@ -492,7 +660,15 @@ class BulkTagUtility:
             height=4,
             font=("Consolas", 8),
             wrap=tk.WORD,
-            yscrollcommand=preview_scroll.set
+            yscrollcommand=preview_scroll.set,
+            bg=self.colors['entry_bg'],
+            fg=self.colors['fg'],
+            insertbackground=self.colors['fg'],
+            selectbackground=self.colors['select_bg'],
+            selectforeground=self.colors['fg'],
+            highlightthickness=0,
+            borderwidth=1,
+            relief=tk.FLAT
         )
         self.preview_text.pack(fill=tk.BOTH, expand=True)
         preview_scroll.config(command=self.preview_text.yview)
@@ -696,7 +872,7 @@ class BulkTagUtility:
 
         self.folder_label.config(text=str(self.current_folder))
 
-        extensions = ['.mp3', '.flac', '.m4a', '.ogg', '.opus', '.wav', '.wma', '.aac']
+        extensions = ['.mp3', '.flac', '.m4a', '.ogg', '.opus', '.wav', '.wma', '.aac', '.aif', '.aiff']
 
         files_found = 0
         for ext in extensions:
