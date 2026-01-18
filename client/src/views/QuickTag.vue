@@ -30,16 +30,28 @@
 
         <!-- Dense tracks -->
         <div class="col-1 clickable q-mr-md text-right">
-            <div class='q-pr-xs'>
-                <q-btn 
-                    :icon='$1t.settings.value.quickTag.thinTracks ? "mdi-view-list" : "mdi-format-list-bulleted-square"' 
+            <div class='q-pr-xs row q-gutter-xs'>
+                <q-btn
+                    :icon='$1t.settings.value.quickTag.thinTracks ? "mdi-view-list" : "mdi-format-list-bulleted-square"'
                     round
                     flat
-                    size='sm' 
-                    color='text-grey-4' 
+                    size='sm'
+                    color='text-grey-4'
                     :style='"margin-top: 8px"'
                     @click='$1t.settings.value.quickTag.thinTracks = !$1t.settings.value.quickTag.thinTracks'
                 ></q-btn>
+                <q-btn
+                    icon='mdi-file-multiple'
+                    round
+                    flat
+                    size='sm'
+                    :color='bulkDialog ? "primary" : "text-grey-4"'
+                    :style='"margin-top: 8px"'
+                    @click='bulkDialog = true'
+                    :disable='$1t.quickTag.value.track.tracks.length === 0'
+                >
+                    <q-tooltip>Bulk Operations ({{ $1t.quickTag.value.track.tracks.length }} selected)</q-tooltip>
+                </q-btn>
             </div>
         </div>
     </div>
@@ -236,6 +248,30 @@
     <!-- Manual Tagger -->
     <ManualTag :path='manualTagPath' @exit='onManualTagDone'></ManualTag>
 
+    <!-- Bulk Operations Dialog -->
+    <q-dialog v-model='bulkDialog' maximized>
+        <q-card class="bg-darker">
+            <q-card-section class="row items-center q-pb-none">
+                <div class="text-h6 text-primary">Bulk Operations</div>
+                <q-space />
+                <q-btn icon="close" flat round dense v-close-popup />
+            </q-card-section>
+
+            <q-card-section>
+                <div class="text-caption text-grey-5 q-mb-md">
+                    Apply operations to <strong class="text-primary">{{ $1t.quickTag.value.track.tracks.length }}</strong> selected tracks
+                </div>
+
+                <div class="row q-col-gutter-md">
+                    <!-- Operations Column -->
+                    <div class="col-12">
+                        <BulkOperations :selectedTracks="$1t.quickTag.value.track.tracks" @close="bulkDialog = false" />
+                    </div>
+                </div>
+            </q-card-section>
+        </q-card>
+    </q-dialog>
+
 </div>
 </template>
 
@@ -249,6 +285,7 @@ import ManualTag from '../components/ManualTag.vue';
 import QuickTagTile from '../components/QuickTagTile.vue';
 import QuickTagTileThin from '../components/QuickTagTileThin.vue';
 import QuickTagContextMenu from '../components/QuickTagContextMenu.vue';
+import BulkOperations from '../components/BulkOperations.vue';
 
 const { setVerticalScrollPosition } = scroll;
 
@@ -262,7 +299,8 @@ const sortDescending = ref(false);
 const sortOption = ref('title');
 const failedDialog = ref(false);
 const manualTagPath = ref<string | undefined>(undefined);
-const noArtCacheList = ref<string[]>([])
+const noArtCacheList = ref<string[]>([]);
+const bulkDialog = ref(false);
 
 let afterSave: undefined | Function = undefined;
 
